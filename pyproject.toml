@@ -1,0 +1,20 @@
+[project]
+name = "project-scaffold"
+version = "0.1.0"
+description = "Cookiecutter templates and tooling for scaffolded monorepos"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.dev-dependencies]
+test = [
+  "pytest>=8.0.0",
+  "cookiecutter>=2.6.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

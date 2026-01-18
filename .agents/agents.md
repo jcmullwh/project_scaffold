@@ -58,8 +58,12 @@ If a default or fallback is truly necessary, it must be:
 ## Specific guidelines
 
 ### Use pdm
-- NEVER use `python -m` or `pip` directly.
-- ALWAYS use `pdm run` or `pdm install` in order to ensure the correct environment and dependencies.
+These instructions are for developing **this repository** (the template/scaffolding system repo). They do **not** imply that generated monorepos must use PDM.
+
+- NEVER use `python -m` or `pip` directly in this repo’s development workflow.
+- ALWAYS use `pdm run` or `pdm install` so the correct environment and dependencies are used.
+
+Generated monorepos produced by this repo’s templates should treat Python environment management as a **per-project** choice (Poetry/uv/pip-tools/conda/PDM/etc.) expressed via explicit `tasks.*` commands in their `tools/scaffold/registry.toml` and recorded in `tools/scaffold/monorepo.toml`. The generated `tools/scaffold` CLI itself should run with plain `python` and must not assume PDM exists.
 
 
 ## Planning and tracking (required)

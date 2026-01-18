@@ -1,0 +1,60 @@
+[scaffold]
+templates_cache_dir = ".scaffold/cache"
+vendor_dir = "tools/templates/vendor"
+
+[kinds.app]
+output_dir = "apps"
+default_generator = "python_stdlib_copy"
+ci = { lint = true, test = true, build = false }
+
+[kinds.lib]
+output_dir = "packages"
+default_generator = "python_stdlib_copy"
+ci = { lint = true, test = true, build = false }
+
+[kinds.data]
+output_dir = "data"
+default_generator = "python_stdlib_copy"
+ci = { lint = false, test = false, build = false }
+
+[kinds.exp]
+output_dir = "experiments"
+default_generator = "python_stdlib_copy"
+ci = { lint = false, test = false, build = false }
+
+[kinds.infra]
+output_dir = "infra"
+default_generator = "python_stdlib_copy"
+ci = { lint = false, test = false, build = false }
+
+
+# ----------------------------
+# GENERATORS
+# ----------------------------
+
+[generators.python_stdlib_copy]
+type = "copy"
+source = "tools/templates/internal/python-stdlib-copy"
+toolchain = "python"
+package_manager = "none"
+substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+tasks.lint = ["python", "-m", "compileall", "src"]
+tasks.test = ["python", "-m", "unittest", "discover", "-s", "tests"]
+
+[generators.python_stdlib_cookiecutter]
+type = "cookiecutter"
+source = "tools/templates/internal/python-stdlib-cookiecutter"
+name_var = "project_slug"
+context_defaults = { package_name = "{name_snake}" }
+toolchain = "python"
+package_manager = "none"
+tasks.lint = ["python", "-m", "compileall", "src"]
+tasks.test = ["python", "-m", "unittest", "discover", "-s", "tests"]
+
+[generators.terraform_module]
+type = "copy"
+source = "tools/templates/internal/terraform-module"
+substitutions = { "__NAME__" = "{name}" }
+toolchain = "terraform"
+package_manager = "none"
+tasks.lint = ["terraform", "fmt", "-check", "-recursive"]
