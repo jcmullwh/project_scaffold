@@ -9,6 +9,11 @@
 - Required only for external Cookiecutter sources and vendoring: `git` on PATH.
 - Required only for running tasks: whatever commands your `tasks.*` reference (e.g. `poetry`, `uv`, `npm`, `cargo`, `terraform`).
 
+## Cookiecutter sources
+
+- Local templates should be referenced as paths (for example `tools/templates/internal/my-template`).
+- External templates must be git-accessible sources (for example `https://…` git URLs, `gh:org/repo` shorthands, or `file://…` URIs that point at a git repo). Non-git HTTP/zip sources are not supported by this tool.
+
 ## Virtual environments
 
 This tool does not create or manage virtual environments. For Python projects, use whatever per-project environment strategy your generator and `tasks.*` imply (Poetry/uv/pip-tools/conda/PDM/venv/etc.). The scaffolder runs tasks exactly as recorded in `tools/scaffold/monorepo.toml`.
@@ -17,6 +22,7 @@ This tool does not create or manage virtual environments. For Python projects, u
 
 - Kinds and generators are defined in `tools/scaffold/registry.toml`.
 - Created projects are recorded in `tools/scaffold/monorepo.toml` and are the source of truth for repo-wide task execution and CI.
+- When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
 
 ## Generator types (registry examples)
 

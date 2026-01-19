@@ -70,14 +70,16 @@ The user-visible proof is a generated monorepo that contains a small `tools/scaf
 - Outcome: Generated monorepos require only `python` to run the scaffolder; `cookiecutter`, `git`, and toolchain/package-manager binaries are required only when using generators/tasks that need them, with loud errors.
 - Outcome: External Cookiecutter templates are supported with a trust gate (`trusted=false` requires `--trust`) and pinning-by-default, plus vendoring (`vendor import`/`vendor update`) with `UPSTREAM.toml` metadata and basic license capture.
 - Outcome: Offline tests validate end-to-end rendering, adding projects (copy/cookiecutter/command generators), external template trust behavior, and vendoring workflows.
+- Outcome: The generated CI workflow runs an `install` task (when defined) before `lint/test/build` using `scaffold run install --skip-missing`.
+- Outcome: `scaffold add` fails early if `kinds.<kind>.ci` enables `lint/test/build` but the chosen generator does not define the corresponding `tasks.*` (override via `--allow-missing-ci-tasks`).
 
 ## Context and Orientation
 
 This repository now contains a working Cookiecutter root template under `templates/monorepo-root/`, a stdlib-only scaffold CLI that is embedded into generated monorepos, and offline tests under `tests/`. Planning artifacts live under `.agents/`.
 
-Two different “roots” will exist once implemented:
+Two different “roots” exist in this repository:
 
-1. The template repository root (this repo), which will contain the Cookiecutter template under `templates/monorepo-root/`.
+1. The template repository root (this repo), which contains the Cookiecutter template under `templates/monorepo-root/`.
 2. The generated monorepo root, which is the rendered output of the template. Paths like `tools/scaffold/scaffold.py` refer to the generated monorepo; in this repo they will live under `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/scaffold.py`.
 
 Key terms used in this plan:
@@ -349,3 +351,5 @@ CLI contract requirements (generated monorepo):
 Plan revision note (2026-01-18 / Codex): Clarified that the generated monorepo should have only `python` as an always-required dependency, with `cookiecutter`, `git`, and toolchain commands treated as conditional requirements that are checked and reported loudly at the point of use. This change was made to match the goal of avoiding external requirements that are not strictly necessary.
 
 Plan revision note (2026-01-18 / Codex): Updated the living-document sections (`Progress`, `Surprises & Discoveries`, `Decision Log`, `Outcomes & Retrospective`, and `Context and Orientation`) to reflect the completed implementation in this repo, including Cookiecutter CLI context-passing constraints, `_copy_without_render` requirements, and vendoring `.git` exclusion.
+
+Plan revision note (2026-01-18 / Codex): Updated the generated CI workflow to run `install` (when present) via `--skip-missing`, and added early validation that CI-enabled tasks (`lint/test/build`) must exist on the chosen generator unless explicitly overridden.

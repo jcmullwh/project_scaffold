@@ -166,6 +166,7 @@ def test_scaffold_add_command_generator(tmp_path: Path) -> None:
         + 'toolchain = "generic"\n'
         + 'package_manager = "none"\n'
         + 'command = ["python", "tools/scaffold/test_command_generator.py", "{dest_dir}"]\n'
+        + 'tasks.lint = ["python", "-c", "import pathlib, sys; sys.exit(0 if pathlib.Path(\\\"CREATED_BY_COMMAND.txt\\\").exists() else 1)"]\n'
         + 'tasks.test = ["python", "-c", "import pathlib, sys; sys.exit(0 if pathlib.Path(\\\"CREATED_BY_COMMAND.txt\\\").exists() else 1)"]\n',
         encoding="utf-8",
     )

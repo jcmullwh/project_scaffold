@@ -289,6 +289,48 @@ def _validate_task_cmd(cmd: Any, *, where: str) -> list[str]:
     return cmd
 
 
+def _require_bool(value: Any, *, where: str) -> bool:
+    if not isinstance(value, bool):
+        raise ScaffoldError(f"{where} must be a boolean")
+    return value
+
+
+def _ci_flag(ci: dict[str, Any], key: str, *, where_prefix: str) -> bool:
+    if key not in ci:
+        return False
+    return _require_bool(ci[key], where=f"{where_prefix}.{key}")
+
+
+def _validate_ci_tasks(
+    *,
+    ci: dict[str, Any],
+    tasks: dict[str, list[str]],
+    kind: str,
+    generator_id: str,
+    project_id: str,
+    allow_missing: bool,
+) -> None:
+    required: list[str] = []
+    where_prefix = f"kinds.{kind}.ci"
+    for task_name in ("lint", "test", "build"):
+        if _ci_flag(ci, task_name, where_prefix=where_prefix) and task_name not in tasks:
+            required.append(task_name)
+
+    if not required:
+        return
+
+    msg = (
+        f"Kind '{kind}' CI enables {', '.join(required)}, but generator '{generator_id}' did not define "
+        + ", ".join(f"tasks.{t}" for t in required)
+        + "."
+    )
+    if not allow_missing:
+        raise ScaffoldError(msg + " Fix the generator tasks or disable those CI flags for the kind.")
+
+    _eprint("WARNING:", msg)
+    _eprint(f"WARNING: Proceeding due to --allow-missing-ci-tasks; CI may fail for project '{project_id}'.")
+
+
 def _normalize_tasks(tasks: Any, *, where: str) -> dict[str, list[str]]:
     if tasks is None:
         return {}
@@ -746,6 +788,15 @@ def cmd_add(args: argparse.Namespace) -> int:
     if not isinstance(ci, dict):
         raise ScaffoldError(f"kinds.{kind}.ci must be a table")
 
+    _validate_ci_tasks(
+        ci=ci,
+        tasks=info.tasks,
+        kind=kind,
+        generator_id=generator_id,
+        project_id=project_id,
+        allow_missing=bool(args.allow_missing_ci_tasks),
+    )
+
     project_entry: dict[str, Any] = {
         "id": project_id,
         "kind": kind,
@@ -876,6 +927,22 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         if not isinstance(tasks, dict):
             errors.append(f"{project_id}: tasks must be a table")
             continue
+
+        ci = project.get("ci", {})
+        if ci is not None:
+            if not isinstance(ci, dict):
+                errors.append(f"{project_id}: ci must be a table when present")
+            else:
+                for task_name in ("lint", "test", "build"):
+                    if task_name in ci:
+                        try:
+                            enabled = _require_bool(ci[task_name], where=f"projects.{project_id}.ci.{task_name}")
+                        except ScaffoldError as exc:
+                            errors.append(f"{project_id}: {exc}")
+                            continue
+                        if enabled and task_name not in tasks:
+                            errors.append(f"{project_id}: ci.{task_name} is true but tasks.{task_name} is missing")
+
         for task_name, cmd in tasks.items():
             try:
                 cmd_list = _validate_task_cmd(cmd, where=f"projects.{project_id}.tasks.{task_name}")
@@ -1152,6 +1219,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-unpinned",
         action="store_true",
         help="Allow running an external generator without a pinned ref (records this in the manifest).",
+    )
+    p_add.add_argument(
+        "--allow-missing-ci-tasks",
+        action="store_true",
+        help="Allow creating a project even if kinds.<kind>.ci enables tasks the generator does not define.",
     )
     p_add.set_defaults(func=cmd_add)
 

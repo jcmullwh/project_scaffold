@@ -43,6 +43,10 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install
+        if: ${{ matrix.id != '__no_projects__' }}
+        run: python tools/scaffold/scaffold.py run install --project "${{ matrix.id }}" --skip-missing
+
       - name: Lint
         if: ${{ matrix.id != '__no_projects__' && matrix.ci_lint }}
         run: python tools/scaffold/scaffold.py run lint --project "${{ matrix.id }}"
@@ -54,4 +58,3 @@ jobs:
       - name: Build
         if: ${{ matrix.id != '__no_projects__' && matrix.ci_build }}
         run: python tools/scaffold/scaffold.py run build --project "${{ matrix.id }}"
-
