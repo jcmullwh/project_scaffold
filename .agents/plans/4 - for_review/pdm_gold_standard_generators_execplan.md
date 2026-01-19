@@ -30,24 +30,35 @@ should work without manual wiring.
 
 ## Progress
 
-- [ ] Decide whether the PDM templates will be (a) vendored copies of cookiecutter-pdm-pypackage or (b) new internal templates modeled after it.
-- [ ] Implement `python_pdm_lib` generator template and registry entry with install/lint/format/typecheck/test tasks.
-- [ ] Implement `python_pdm_app` generator template and registry entry with install/lint/format/typecheck/test tasks.
-- [ ] Ensure generated subprojects do not include `.github/workflows` (monorepo-safe).
-- [ ] Add end-to-end tests in the template repo that scaffold both generators and run `install` + `test`.
-- [ ] Document how to use these generators in generated monorepo README.
+- [x] (2026-01-19) Decide whether the PDM templates will be (a) vendored copies of cookiecutter-pdm-pypackage or (b) new internal templates modeled after it.
+- [x] (2026-01-19) Implement `python_pdm_lib` generator template and registry entry with install/lint/format/typecheck/test tasks.
+- [x] (2026-01-19) Implement `python_pdm_app` generator template and registry entry with install/lint/format/typecheck/test tasks.
+- [x] (2026-01-19) Ensure generated subprojects do not include `.github/workflows` (monorepo-safe).
+- [x] (2026-01-19) Add end-to-end tests in the template repo that scaffold both generators with `--no-install` and validate manifest tasks (offline-safe).
+- [x] (2026-01-19) Document how to use these generators in generated monorepo README.
 
 ## Surprises & Discoveries
 
-- (none yet)
+- Observation: Running `pdm install` for newly scaffolded subprojects is not reliably offline-friendly for the template repo’s pytest suite.
+  Evidence: The suite must run without network calls; installing real dependencies from PyPI would violate that constraint.
 
 ## Decision Log
 
-- (none yet)
+- Decision: Implement these generators as new internal cookiecutter templates (not a vendored upstream snapshot).
+  Rationale: Keep the generator offline-friendly, monorepo-safe, and easy to iterate without tracking upstream template changes.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Set `python_pdm_lib` as a distribution project and `python_pdm_app` as non-distribution.
+  Rationale: Libraries typically publish artifacts; apps/services often prioritize runtime layout over packaging.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Keep template repo tests offline by scaffolding with `--no-install` and asserting manifest tasks instead of running `pdm install`.
+  Rationale: Validates integration (template + registry + scaffold manifest wiring) without requiring network access or external tools during the template repo’s CI.
+  Date/Author: 2026-01-19 / Codex
 
 ## Outcomes & Retrospective
 
-- (not started)
+- Outcome: Generated monorepos include `python_pdm_lib` and `python_pdm_app` generator IDs with explicit manifest tasks for install/lint/format/typecheck/depcheck/test.
+- Outcome: Internal templates live under `tools/templates/internal/python-pdm-lib/` and `tools/templates/internal/python-pdm-app/` and do not add any per-project CI.
+- Outcome: Template repo tests scaffold both generators (offline) and confirm the manifest records the expected tasks.
 
 ## Context and Orientation
 
@@ -251,3 +262,7 @@ This plan introduces two new generator IDs in `tools/scaffold/registry.toml` (in
 - `python_pdm_app`
 
 It introduces new internal template directories under `tools/templates/internal/`.
+
+---
+
+Plan update (2026-01-19): Marked milestones complete and recorded decisions about template structure, offline testing, and app vs. lib distribution settings.

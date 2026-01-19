@@ -24,24 +24,42 @@ and CI will set up the right tools and run the configured tasks.
 
 ## Progress
 
-- [ ] Add at least one Poetry generator and one uv generator (either internal templates or documented external templates).
-- [ ] Add at least one Node generator using the command generator type (npm create).
-- [ ] Improve scaffold tool manifest writing to preserve unknown keys and add schema versioning.
+- [x] (2026-01-19) Add at least one Poetry generator and one uv generator (either internal templates or documented external templates).
+- [x] (2026-01-19) Add at least one Node generator using the command generator type (npm create).
+- [x] (2026-01-19) Improve scaffold tool manifest writing to preserve unknown keys and add schema versioning.
 - [x] (2026-01-19) Add strict validation: if a project kind enables CI for a task, the generator must define the task (or the add command must error loudly).
-- [ ] Extend generated monorepo CI to set up additional toolchains (at minimum terraform and node; optionally rust/go as examples).
-- [ ] Add template repo tests covering: manifest preservation, task/CI consistency, and at least one non-PDM generator being recorded correctly.
+- [x] (2026-01-19) Extend generated monorepo CI to set up additional toolchains (at minimum terraform and node; optionally rust/go as examples).
+- [x] (2026-01-19) Add template repo tests covering: manifest preservation, task/CI consistency, and at least one non-PDM generator being recorded correctly.
 
 ## Surprises & Discoveries
 
-- (none yet)
+- Observation: Even “optional” metadata in `monorepo.toml` can be lost if the manifest writer only emits a fixed subset of keys.
+  Evidence: The previous `_write_manifest` wrote only known keys and dropped unknown per-project metadata.
 
 ## Decision Log
 
-- (none yet)
+- Decision: Add `python_poetry_app` and `python_uv_app` as internal copy generators.
+  Rationale: Copy-based generators are offline-friendly to scaffold and don’t require `cookiecutter` for generation; tool-specific binaries are only needed when running tasks.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Add `node_vite` as a command generator and introduce kind `web` with `ci.build=true` and `ci.lint/ci.test=false`.
+  Rationale: Node projects can participate in CI with a realistic `install` + `build` path without assuming lint/test scripts exist out of the box.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Add `schema_version = 1` to `tools/scaffold/monorepo.toml` and write manifests in a non-lossy way.
+  Rationale: Enables future schema evolution and preserves user-added metadata across scaffold operations.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Enforce task name validation (`^[a-zA-Z0-9_-]+$`) and reject dots.
+  Rationale: Prevent ambiguous TOML dotted keys like `tasks.foo.bar` from creating unintended nesting and hard-to-debug manifest corruption.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Keep template repo tests offline by validating recorded tasks and manifest structure without invoking Poetry/uv/npm.
+  Rationale: Ensures the template repo’s CI remains deterministic and does not depend on network or external tool installs.
+  Date/Author: 2026-01-19 / Codex
 
 ## Outcomes & Retrospective
 
-- (not started)
+- Outcome: The default registry now includes Poetry (`python_poetry_app`), uv (`python_uv_app`), and Node (`node_vite`) generators and a `web` kind for build-focused Node CI.
+- Outcome: The scaffold tool preserves unknown manifest keys and records a `schema_version`, enabling stable, evolvable manifest semantics.
+- Outcome: Generated monorepo CI sets up Terraform conditionally and continues to set up Node/Python per project.
+- Outcome: Offline template repo tests cover manifest preservation, CI/task strictness enforcement, and non-PDM generator recording.
 
 ## Context and Orientation
 
@@ -292,3 +310,7 @@ Keep internal templates small and explicit. The goal is to provide paved paths w
 This plan changes the behavior of the generated monorepo scaffold CLI (`tools/scaffold/scaffold.py`) by adding stricter validation and more stable manifest writing.
 
 It also introduces new generator IDs in `tools/scaffold/registry.toml` for Poetry/uv/node, and potentially adds CI toolchain setup steps for new toolchains.
+
+---
+
+Plan update (2026-01-19): Marked milestones complete and recorded decisions after adding new generators, manifest schema/preservation, CI toolchain setup, and offline regression tests.

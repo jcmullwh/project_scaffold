@@ -2,6 +2,16 @@
 
 `tools/scaffold/scaffold.py` is a stdlib-only Python CLI for managing this monorepo.
 
+## Golden path
+
+List available kinds and generators, then scaffold a project and run its tasks:
+
+    python tools/scaffold/scaffold.py doctor
+    python tools/scaffold/scaffold.py kinds
+    python tools/scaffold/scaffold.py generators
+    python tools/scaffold/scaffold.py add app billing-api
+    python tools/scaffold/scaffold.py run test --project billing-api
+
 ## Minimal requirements
 
 - Always required: `python` on PATH (Python 3.11+ recommended; older Pythons need `tomli` installed to parse TOML).
@@ -23,6 +33,34 @@ This tool does not create or manage virtual environments. For Python projects, u
 - Kinds and generators are defined in `tools/scaffold/registry.toml`.
 - Created projects are recorded in `tools/scaffold/monorepo.toml` and are the source of truth for repo-wide task execution and CI.
 - When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
+
+## Included generators (default registry)
+
+The default `tools/scaffold/registry.toml` includes:
+
+- `python_stdlib_copy` and `python_stdlib_cookiecutter` (stdlib-only Python skeletons)
+- `python_pdm_lib` and `python_pdm_app` (PDM-based Python projects; requires `pdm` on PATH to run tasks)
+- `python_poetry_app` (Poetry-based Python project; requires `poetry` on PATH to run tasks)
+- `python_uv_app` (uv-based Python project; requires `uv` on PATH to run tasks)
+- `node_vite` (Vite-based Node project; requires `npm` on PATH to run tasks)
+- `terraform_module` (Terraform module skeleton)
+
+Example:
+
+    python tools/scaffold/scaffold.py add lib my-lib --generator python_pdm_lib --no-install
+
+## Trust model (external templates)
+
+Cookiecutter templates can execute code via hooks. Treat external templates as untrusted by default:
+
+- Prefer pinning external templates to a git ref via `generators.<id>.ref`.
+- If a generator is configured with `trusted = false`, `scaffold add` will refuse to run it unless you pass `--trust` for that run.
+- For long-lived use, vendor the external template into this repo:
+
+    python tools/scaffold/scaffold.py vendor import <generator_id> --as <vendored_id>
+
+Vendoring copies the upstream template into `tools/templates/vendor/<vendored_id>`, writes an `UPSTREAM.toml` with the pinned
+commit and license metadata, and appends a new generator entry to `tools/scaffold/registry.toml`.
 
 ## Generator types (registry examples)
 
@@ -56,3 +94,11 @@ Command (anything that can create the destination directory):
     command = ["npm", "create", "vite@latest", "{dest_dir}"]
     tasks.install = ["npm", "install"]
     tasks.build = ["npm", "run", "build"]
+
+## CI behavior (generated monorepo)
+
+The repo-level workflow at `.github/workflows/ci.yml` is driven by the manifest:
+
+- `tools/scaffold/ci_matrix.py` reads `tools/scaffold/monorepo.toml` and emits a GitHub Actions matrix.
+- The CI job runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per project
+  based on each projectâ€™s `ci` flags and recorded `tasks.*` commands.

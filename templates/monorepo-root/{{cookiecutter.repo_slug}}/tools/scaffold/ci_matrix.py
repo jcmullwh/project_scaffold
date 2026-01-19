@@ -20,16 +20,15 @@ def _load_toml(path: Path) -> dict[str, Any]:
         return {}
 
     try:
-        import tomllib  # type: ignore[attr-defined]
-    except Exception:  # pragma: no cover
-        try:
-            import tomli as tomllib  # type: ignore[assignment]
-        except Exception as exc:  # pragma: no cover
-            raise RuntimeError(
-                "TOML parsing requires Python 3.11+ (tomllib) or an installed 'tomli' package."
-            ) from exc
+        import tomllib
 
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except ModuleNotFoundError:  # pragma: no cover
+        try:
+            import tomli
+        except ModuleNotFoundError as exc:  # pragma: no cover
+            raise RuntimeError("TOML parsing requires Python 3.11+ (tomllib) or an installed 'tomli' package.") from exc
+        data = tomli.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise RuntimeError(f"Invalid TOML root in {path}: expected table")
     return data
@@ -46,7 +45,8 @@ def main() -> int:
         for p in projects:
             if not isinstance(p, dict):
                 continue
-            ci = p.get("ci") if isinstance(p.get("ci"), dict) else {}
+            ci_raw = p.get("ci")
+            ci: dict[str, Any] = ci_raw if isinstance(ci_raw, dict) else {}
             include.append(
                 {
                     "id": p.get("id"),

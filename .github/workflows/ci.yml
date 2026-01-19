@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: pdm-project/setup-pdm@v4
+        with:
+          cache: true
+
+      - name: Install
+        run: pdm install
+
+      - name: Ruff format
+        run: pdm run ruff format --check .
+
+      - name: Ruff lint
+        run: pdm run ruff check .
+
+      - name: Mypy
+        run: pdm run mypy .
+
+      - name: Deptry
+        run: pdm run deptry .
+
+      - name: Pytest
+        run: pdm run pytest

@@ -23,24 +23,35 @@ How to see it working: generate a new monorepo from `templates/monorepo-root`, a
 
 ## Progress
 
-- [ ] Add “doctor” step to generated monorepo CI and ensure it runs before lint/test/build.
+- [x] (2026-01-19) Add “doctor” step to generated monorepo CI and ensure it runs before lint/test/build.
 - [x] (2026-01-19) Add “install” step to generated monorepo CI using manifest tasks, safe for missing install.
-- [ ] Add caching and concurrency to generated monorepo CI.
-- [ ] Add minimal repo hygiene artifacts to the generated monorepo (docs + optional pre-commit/editorconfig).
-- [ ] Update generated monorepo docs to explain registry/manifest, generators, trust model, vendoring, and CI behavior.
-- [ ] Extend template repo tests to verify CI workflow contains doctor + install steps.
+- [x] (2026-01-19) Add caching and concurrency to generated monorepo CI.
+- [x] (2026-01-19) Add minimal repo hygiene artifacts to the generated monorepo (docs + optional pre-commit/editorconfig).
+- [x] (2026-01-19) Update generated monorepo docs to explain registry/manifest, generators, trust model, vendoring, and CI behavior.
+- [x] (2026-01-19) Extend template repo tests to verify CI workflow contains doctor + install steps.
 
 ## Surprises & Discoveries
 
-- (none yet)
+- Observation: The original `doctor` behavior required PATH availability for every task across every project (and could fail CI for tools/tasks that CI will not run).
+  Evidence: `cmd_doctor` iterated all `tasks.*` entries and called `_require_on_path` for each task command.
 
 ## Decision Log
 
-- (none yet)
+- Decision: Run `doctor` in CI before install/lint/test/build.
+  Rationale: Fail fast on manifest inconsistencies and missing CI-required tools before spending time installing deps or running tests.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Narrow `doctor` PATH checks to tasks CI expects to run (`install` when present, plus enabled `lint/test/build` tasks).
+  Rationale: Avoid false failures for optional tasks and toolchains not involved in CI for a given project.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Add conservative pip/npm caching and workflow concurrency to the generated CI template.
+  Rationale: Improve CI stability and speed without assuming a single package manager or writing cache artifacts into the repo.
+  Date/Author: 2026-01-19 / Codex
 
 ## Outcomes & Retrospective
 
-- (not started)
+- Outcome: Generated monorepos now include a CI workflow with concurrency + caching, plus `doctor` and a safe `install --skip-missing` step before lint/test/build.
+- Outcome: Generated monorepo docs now include a practical golden path, plus a clear trust model and vendoring workflow.
+- Outcome: Template repo tests assert the rendered CI workflow contains doctor + install steps.
 
 ## Context and Orientation
 
@@ -230,3 +241,7 @@ Keep the generated monorepo docs short and practical. The goal is that a new use
 ## Interfaces and Dependencies
 
 This plan modifies only template files and documentation. No new Python API surface is introduced, but the generated CI workflow behavior changes (doctor + install).
+
+---
+
+Plan update (2026-01-19): Marked milestones complete and recorded key behavior change (doctor scope) made to keep CI reliable for polyglot repos.

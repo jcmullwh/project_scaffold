@@ -14,5 +14,13 @@ Planning artifacts live in `.agents/`.
 This repo uses PDM for the development environment:
 
     pdm install
+
+Run checks:
+
+    pdm run ruff format --check .
+    pdm run ruff check .
+    pdm run mypy .
+    pdm run deptry .
     pdm run pytest
 
+See `CONTRIBUTING.md` for details.

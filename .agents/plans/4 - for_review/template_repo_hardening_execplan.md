@@ -21,23 +21,38 @@ should succeed locally, and GitHub Actions for this repo should run the same che
 
 ## Progress
 
-- [ ] Add ruff, mypy, deptry, and coverage configuration and dev dependencies to the template repo.
-- [ ] Add pre-commit hooks and basic repo hygiene files for contributors.
-- [ ] Add GitHub Actions CI workflow for the template repo (lint/type/test + template smoke).
-- [ ] Ensure all existing tests still pass and adjust tests only if required by new strictness.
-- [ ] Document local developer workflow in CONTRIBUTING.md / DEVELOPING.md.
+- [x] (2026-01-19) Add ruff, mypy, deptry, and coverage configuration and dev dependencies to the template repo.
+- [x] (2026-01-19) Add pre-commit hooks and basic repo hygiene files for contributors.
+- [x] (2026-01-19) Add GitHub Actions CI workflow for the template repo (lint/type/test + template smoke).
+- [x] (2026-01-19) Ensure all existing tests still pass and adjust tests only if required by new strictness.
+- [x] (2026-01-19) Document local developer workflow in CONTRIBUTING.md / DEVELOPING.md.
 
 ## Surprises & Discoveries
 
-- (none yet)
+- Observation: Cookiecutter templates can include Python files that are intentionally not valid Python until rendered (e.g. `import {{ cookiecutter.package_name }}`), which breaks static tooling that parses `.py` files.
+  Evidence: `python-stdlib-cookiecutter/{{cookiecutter.project_slug}}/tests/test_basic.py` contains cookiecutter placeholders.
+- Observation: Deptryâ€™s `exclude` config option overwrites its default excludes (including `.venv/` and `tests/`), which can accidentally scan the virtualenv and explode into thousands of false positives.
+  Evidence: Running `pdm run deptry .` after setting `exclude` scanned `.venv/Lib/site-packages/**` and reported thousands of issues.
 
 ## Decision Log
 
-- (none yet)
+- Decision: Exclude generator template directories from ruff/mypy/deptry scanning via `templates/**/tools/templates/**`.
+  Rationale: Generator templates may contain non-parseable placeholder Python, but we still want to typecheck/lint the scaffold tooling under `templates/**/tools/scaffold/**`.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Set `ruff` line length to 120.
+  Rationale: The scaffold tooling has many user-facing error messages and help strings; 100 was overly noisy while still keeping lines reasonably bounded.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Keep `tomli` as an optional fallback for Python <3.11 and teach deptry to tolerate its dev-only declaration.
+  Rationale: The generated scaffold tooling supports older Python with `tomli`; deptry otherwise reports it as a DEP004 mismatch. We want deptry signal for real drift, not for optional backports.
+  Date/Author: 2026-01-19 / Codex
+- Decision: Ignore Ruff rule `UP017` (prefer `datetime.timezone.utc` over `datetime.UTC`).
+  Rationale: `datetime.UTC` is Python 3.11+; the generated scaffold tooling includes compatibility code for older Python versions.
+  Date/Author: 2026-01-19 / Codex
 
 ## Outcomes & Retrospective
 
-- (not started)
+- Outcome: The template repo now has a repeatable local and CI quality baseline: ruff format/lint, mypy, deptry, and pytest.
+- Outcome: Repo hygiene files and a contributor guide exist to make it easy to run the same gates locally that CI enforces.
 
 ## Context and Orientation
 
@@ -189,3 +204,6 @@ Keep changes minimal and observable. When you add CI, include a short snippet of
 
 No public interfaces are introduced in this plan. Dependencies added (ruff/mypy/deptry/coverage) are only for developing and testing this template repository.
 
+---
+
+Plan update (2026-01-19): Recorded implementation decisions/discoveries and marked all milestones complete after adding tooling, CI, and docs.

@@ -1,3 +1,4 @@
 # This file is managed by tools/scaffold/scaffold.py.
 # It is the source of truth for what projects exist in this monorepo.
 
+schema_version = 1

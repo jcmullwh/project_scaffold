@@ -1,7 +1,8 @@
 """
 Scaffold: monorepo project management CLI.
 
-This script is intentionally stdlib-only. It shells out to external tools only when a chosen generator or task needs them.
+This script is intentionally stdlib-only. It shells out to external tools only when a chosen generator or task needs
+them.
 """
 
 from __future__ import annotations
@@ -9,7 +10,6 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as _dt
-import json
 import os
 import re
 import shutil
@@ -17,7 +17,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 
 
@@ -45,15 +45,17 @@ def _load_toml(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise ScaffoldError(f"Missing TOML file: {path}")
     try:
-        import tomllib  # type: ignore[attr-defined]
-    except Exception:  # pragma: no cover
+        import tomllib
+
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+    except ModuleNotFoundError:  # pragma: no cover
         try:
-            import tomli as tomllib  # type: ignore[assignment]
-        except Exception as exc:  # pragma: no cover
+            import tomli
+        except ModuleNotFoundError as exc:  # pragma: no cover
             raise ScaffoldError(
                 "TOML parsing requires Python 3.11+ (tomllib) or an installed 'tomli' package."
             ) from exc
-    data = tomllib.loads(path.read_text(encoding="utf-8"))
+        data = tomli.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ScaffoldError(f"Invalid TOML root in {path}: expected table")
     return data
@@ -61,13 +63,20 @@ def _load_toml(path: Path) -> dict[str, Any]:
 
 def _toml_quote_string(value: str) -> str:
     escaped = (
-        value.replace("\\", "\\\\")
-        .replace("\t", "\\t")
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace('"', '\\"')
+        value.replace("\\", "\\\\").replace("\t", "\\t").replace("\r", "\\r").replace("\n", "\\n").replace('"', '\\"')
     )
     return f'"{escaped}"'
+
+
+_TOML_BARE_KEY_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+_MANIFEST_SCHEMA_VERSION = 1
+
+
+def _toml_format_key(key: str) -> str:
+    """Format a TOML key, quoting it only when required."""
+    if _TOML_BARE_KEY_RE.match(key):
+        return key
+    return _toml_quote_string(key)
 
 
 def _toml_format_value(value: Any) -> str:
@@ -75,22 +84,52 @@ def _toml_format_value(value: Any) -> str:
         return "true" if value else "false"
     if isinstance(value, int):
         return str(value)
+    if isinstance(value, float):
+        return str(value)
+    if isinstance(value, _dt.datetime):
+        return value.isoformat()
+    if isinstance(value, _dt.date):
+        return value.isoformat()
+    if isinstance(value, _dt.time):
+        return value.isoformat()
     if isinstance(value, str):
         return _toml_quote_string(value)
     if isinstance(value, list):
         return "[" + ", ".join(_toml_format_value(v) for v in value) + "]"
     if isinstance(value, dict):
-        inner = ", ".join(f"{k} = {_toml_format_value(v)}" for k, v in value.items())
+        inner_parts: list[str] = []
+        for k, v in value.items():
+            if not isinstance(k, str) or not k:
+                raise ScaffoldError(f"Unsupported TOML dict key type: {type(k).__name__}")
+            inner_parts.append(f"{_toml_format_key(k)} = {_toml_format_value(v)}")
+        inner = ", ".join(inner_parts)
         return "{ " + inner + " }"
     raise ScaffoldError(f"Unsupported TOML value type: {type(value).__name__}")
 
 
-def _load_projects(repo_root: Path) -> list[dict[str, Any]]:
+def _load_manifest(repo_root: Path) -> dict[str, Any]:
+    """Load the full manifest dict and validate/normalize `schema_version`."""
     manifest_path = _manifest_path(repo_root)
     if not manifest_path.exists():
-        return []
+        return {"schema_version": _MANIFEST_SCHEMA_VERSION, "projects": []}
 
     data = _load_toml(manifest_path)
+    schema_version = data.get("schema_version")
+    if schema_version is None:
+        data["schema_version"] = _MANIFEST_SCHEMA_VERSION
+    else:
+        if not isinstance(schema_version, int):
+            raise ScaffoldError("monorepo.toml: schema_version must be an integer")
+        if schema_version > _MANIFEST_SCHEMA_VERSION:
+            raise ScaffoldError(
+                f"monorepo.toml: schema_version {schema_version} is newer than this scaffold tool supports "
+                f"({_MANIFEST_SCHEMA_VERSION})"
+            )
+    return data
+
+
+def _load_projects(repo_root: Path) -> list[dict[str, Any]]:
+    data = _load_manifest(repo_root)
     projects = data.get("projects", [])
     if projects is None:
         return []
@@ -99,33 +138,74 @@ def _load_projects(repo_root: Path) -> list[dict[str, Any]]:
     for project in projects:
         if not isinstance(project, dict):
             raise ScaffoldError("monorepo.toml: each [[projects]] entry must be a table")
-    return projects
+    return cast(list[dict[str, Any]], projects)
 
 
-def _write_manifest(path: Path, projects: list[dict[str, Any]]) -> None:
+def _write_manifest(path: Path, manifest: dict[str, Any]) -> None:
     lines: list[str] = []
     lines.append("# This file is managed by tools/scaffold/scaffold.py.")
     lines.append("# It is the source of truth for what projects exist in this monorepo.")
     lines.append("")
+
+    schema_version = manifest.get("schema_version", _MANIFEST_SCHEMA_VERSION)
+    if not isinstance(schema_version, int):
+        raise ScaffoldError("monorepo.toml: schema_version must be an integer")
+    lines.append(f"schema_version = {schema_version}")
+    lines.append("")
+
+    extra_keys = [k for k in manifest.keys() if k not in {"schema_version", "projects"}]
+    for key in sorted(extra_keys):
+        lines.append(f"{_toml_format_key(key)} = {_toml_format_value(manifest[key])}")
+    if extra_keys:
+        lines.append("")
+
+    projects = manifest.get("projects", [])
+    if projects is None:
+        projects = []
+    if not isinstance(projects, list):
+        raise ScaffoldError("monorepo.toml: expected [[projects]] array")
+
     for project in projects:
+        if not isinstance(project, dict):
+            raise ScaffoldError("monorepo.toml: each [[projects]] entry must be a table")
         lines.append("[[projects]]")
 
+        emitted: set[str] = set()
         for key in ("id", "kind", "path", "generator", "toolchain", "package_manager"):
             if key in project:
-                lines.append(f"{key} = {_toml_format_value(project[key])}")
+                lines.append(f"{_toml_format_key(key)} = {_toml_format_value(project[key])}")
+                emitted.add(key)
 
-        for key in ("generator_source", "generator_ref", "generator_resolved_commit", "generator_pinned"):
+        for key in (
+            "generator_source",
+            "generator_ref",
+            "generator_resolved_commit",
+            "generator_pinned",
+        ):
             if key in project:
-                lines.append(f"{key} = {_toml_format_value(project[key])}")
+                lines.append(f"{_toml_format_key(key)} = {_toml_format_value(project[key])}")
+                emitted.add(key)
+
+        for key in sorted(project.keys()):
+            if key in emitted or key in {"ci", "tasks"}:
+                continue
+            lines.append(f"{_toml_format_key(key)} = {_toml_format_value(project[key])}")
 
         ci = project.get("ci")
         if isinstance(ci, dict):
             lines.append(f"ci = {_toml_format_value(ci)}")
+        elif ci is not None:
+            raise ScaffoldError("monorepo.toml: projects[].ci must be a table when present")
 
         tasks = project.get("tasks")
         if isinstance(tasks, dict):
-            for task_name, cmd in tasks.items():
-                lines.append(f"tasks.{task_name} = {_toml_format_value(cmd)}")
+            for task_name in sorted(tasks.keys(), key=str):
+                if not isinstance(task_name, str) or not task_name:
+                    raise ScaffoldError("monorepo.toml: projects[].tasks must use non-empty string task names")
+                _validate_task_name(task_name, where="monorepo.toml: projects[].tasks")
+                lines.append(f"tasks.{task_name} = {_toml_format_value(tasks[task_name])}")
+        elif tasks is not None:
+            raise ScaffoldError("monorepo.toml: projects[].tasks must be a table when present")
 
         lines.append("")
 
@@ -262,13 +342,15 @@ def _get_kind(registry: dict[str, Any], kind: str) -> dict[str, Any]:
     kinds = registry.get("kinds", {})
     if not isinstance(kinds, dict) or kind not in kinds or not isinstance(kinds[kind], dict):
         raise ScaffoldError(f"Unknown kind: {kind}")
-    return kinds[kind]
+    return cast(dict[str, Any], kinds[kind])
 
 
 def _get_generator(registry: dict[str, Any], generator_id: str) -> dict[str, Any]:
     generators = registry.get("generators", {})
-    if not isinstance(generators, dict) or generator_id not in generators or not isinstance(
-        generators[generator_id], dict
+    if (
+        not isinstance(generators, dict)
+        or generator_id not in generators
+        or not isinstance(generators[generator_id], dict)
     ):
         raise ScaffoldError(f"Unknown generator: {generator_id}")
     gen = dict(generators[generator_id])
@@ -340,8 +422,15 @@ def _normalize_tasks(tasks: Any, *, where: str) -> dict[str, list[str]]:
     for task_name, cmd in tasks.items():
         if not isinstance(task_name, str) or not task_name:
             raise ScaffoldError(f"{where}: invalid task name {task_name!r}")
+        _validate_task_name(task_name, where=where)
         out[task_name] = _validate_task_cmd(cmd, where=f"{where}.tasks.{task_name}")
     return out
+
+
+def _validate_task_name(task_name: str, *, where: str) -> None:
+    """Validate a task name is safe to serialize as `tasks.<name>` in TOML."""
+    if not _TOML_BARE_KEY_RE.match(task_name):
+        raise ScaffoldError(f"{where}: task name must match ^[a-zA-Z0-9_-]+$ (rejects dots and spaces): {task_name!r}")
 
 
 def _ensure_unique_project_id(projects: list[dict[str, Any]], project_id: str) -> None:
@@ -510,7 +599,8 @@ def _generate_cookiecutter(
             )
         if not allow_unpinned and not (isinstance(ref, str) and ref):
             raise ScaffoldError(
-                f"External generator '{generator['id']}' is missing 'ref'. Set generators.{generator['id']}.ref or use --allow-unpinned."
+                f"External generator '{generator['id']}' is missing 'ref'. "
+                f"Set generators.{generator['id']}.ref or use --allow-unpinned."
             )
 
         _require_on_path("git", why="external cookiecutter source selected")
@@ -656,26 +746,22 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     manifest_file.parent.mkdir(parents=True, exist_ok=True)
     if not manifest_file.exists():
-        manifest_file.write_text(
-            "# This file is managed by tools/scaffold/scaffold.py.\n"
-            "# It is the source of truth for what projects exist in this monorepo.\n",
-            encoding="utf-8",
-        )
+        _write_manifest(manifest_file, {"schema_version": _MANIFEST_SCHEMA_VERSION, "projects": []})
         created.append(str(manifest_file))
 
     registry = _load_registry(repo_root)
     cache_dir = str(registry.get("scaffold", {}).get("templates_cache_dir", ".scaffold/cache"))
     vendor_dir = str(registry.get("scaffold", {}).get("vendor_dir", "tools/templates/vendor"))
     for rel in (cache_dir, vendor_dir):
-        p = repo_root / rel
-        if not p.exists():
-            p.mkdir(parents=True, exist_ok=True)
-            created.append(str(p))
+        dir_path = repo_root / rel
+        if not dir_path.exists():
+            dir_path.mkdir(parents=True, exist_ok=True)
+            created.append(str(dir_path))
 
     if created:
         print("Created:")
-        for p in created:
-            print(f"- {p}")
+        for created_path in created:
+            print(f"- {created_path}")
     else:
         print("Nothing to do (already initialized).")
 
@@ -780,7 +866,16 @@ def cmd_add(args: argparse.Namespace) -> int:
     else:
         info = _generate_command(repo_root=repo_root, generator=generator, dest_dir=dest_dir, context=context)
 
-    projects = _load_projects(repo_root)
+    manifest = _load_manifest(repo_root)
+    projects_raw = manifest.get("projects", [])
+    if projects_raw is None:
+        projects_raw = []
+    if not isinstance(projects_raw, list):
+        raise ScaffoldError("monorepo.toml: expected [[projects]] array")
+    for project in projects_raw:
+        if not isinstance(project, dict):
+            raise ScaffoldError("monorepo.toml: each [[projects]] entry must be a table")
+    projects: list[dict[str, Any]] = cast(list[dict[str, Any]], projects_raw)
     project_id = name
     _ensure_unique_project_id(projects, project_id)
 
@@ -810,7 +905,8 @@ def cmd_add(args: argparse.Namespace) -> int:
     project_entry.update(info.provenance)
 
     projects.append(project_entry)
-    _write_manifest(_manifest_path(repo_root), projects)
+    manifest["projects"] = projects
+    _write_manifest(_manifest_path(repo_root), manifest)
 
     for w in info.warnings:
         _eprint(f"WARNING: {w}")
@@ -824,7 +920,8 @@ def cmd_add(args: argparse.Namespace) -> int:
             cp = _run(install_cmd, cwd=dest_dir)
             if cp.returncode != 0:
                 raise ScaffoldError(
-                    f"Install task failed ({cp.returncode}). Project was created at {dest_rel} and recorded in monorepo.toml."
+                    f"Install task failed ({cp.returncode}). Project was created at {dest_rel} and recorded in "
+                    "monorepo.toml."
                 )
 
     print(f"Created project {project_id} at {dest_rel}")
@@ -834,6 +931,8 @@ def cmd_add(args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     repo_root = _repo_root()
     projects = _load_projects(repo_root)
+
+    _validate_task_name(args.task, where="scaffold run")
 
     selectors = [bool(args.all), bool(args.kind), bool(args.project)]
     if sum(1 for x in selectors if x) != 1:
@@ -911,15 +1010,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             errors.append(f"{project_id}: {exc}")
 
         try:
-            gen = _get_generator(registry, str(generator_id))
-            gen_type = gen.get("type")
-            if gen_type == "cookiecutter":
-                _require_on_path("cookiecutter", why=f"project '{project_id}' uses cookiecutter generator")
-                src = gen.get("source")
-                if isinstance(src, str):
-                    sk, _ = _classify_source(repo_root, src)
-                    if sk == "external":
-                        _require_on_path("git", why=f"project '{project_id}' uses external cookiecutter generator")
+            _get_generator(registry, str(generator_id))
         except ScaffoldError as exc:
             errors.append(f"{project_id}: {exc}")
 
@@ -927,6 +1018,18 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         if not isinstance(tasks, dict):
             errors.append(f"{project_id}: tasks must be a table")
             continue
+
+        validated_task_cmds: dict[str, list[str]] = {}
+        for task_name, cmd in tasks.items():
+            if not isinstance(task_name, str) or not task_name:
+                errors.append(f"{project_id}: tasks contains a non-string or empty task name")
+                continue
+            try:
+                validated_task_cmds[task_name] = _validate_task_cmd(
+                    cmd, where=f"projects.{project_id}.tasks.{task_name}"
+                )
+            except ScaffoldError as exc:
+                errors.append(f"{project_id}: {exc}")
 
         ci = project.get("ci", {})
         if ci is not None:
@@ -943,10 +1046,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                         if enabled and task_name not in tasks:
                             errors.append(f"{project_id}: ci.{task_name} is true but tasks.{task_name} is missing")
 
-        for task_name, cmd in tasks.items():
+        required_tasks: set[str] = set()
+        if "install" in validated_task_cmds:
+            required_tasks.add("install")
+        if isinstance(ci, dict):
+            for task_name in ("lint", "test", "build"):
+                if ci.get(task_name) is True:
+                    required_tasks.add(task_name)
+
+        for task_name in sorted(required_tasks):
+            cmd = validated_task_cmds.get(task_name)
+            if cmd is None:
+                continue
             try:
-                cmd_list = _validate_task_cmd(cmd, where=f"projects.{project_id}.tasks.{task_name}")
-                _require_on_path(cmd_list[0], why=f"task '{task_name}' for project '{project_id}'")
+                _require_on_path(cmd[0], why=f"task '{task_name}' for project '{project_id}'")
             except ScaffoldError as exc:
                 errors.append(f"{project_id}: {exc}")
 
@@ -1083,7 +1196,9 @@ def cmd_vendor_import(args: argparse.Namespace) -> int:
         "upstream_url": source,
         "upstream_ref": upstream_ref,
         "upstream_resolved_commit": resolved_commit,
-        "imported_at": _dt.datetime.now(tz=_dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "imported_at": (
+            _dt.datetime.now(tz=_dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        ),
         "license_spdx": license_spdx,
         "license_files": copied_license_names,
     }
@@ -1174,7 +1289,11 @@ def cmd_vendor_update(args: argparse.Namespace) -> int:
         raise ScaffoldError(f"Upstream template directory missing in checkout: {upstream_template_dir}")
     shutil.copytree(upstream_template_dir, upstream_tmp, ignore=shutil.ignore_patterns(".git"))
 
-    cp = _run(["git", "diff", "--no-index", str(current_tmp), str(upstream_tmp)], cwd=repo_root, capture=True)
+    cp = _run(
+        ["git", "diff", "--no-index", str(current_tmp), str(upstream_tmp)],
+        cwd=repo_root,
+        capture=True,
+    )
     diff_text = (cp.stdout or "") + (cp.stderr or "")
     print(diff_text.rstrip())
     print("")
@@ -1237,7 +1356,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--keep-going", action="store_true", help="Continue running even if a task fails.")
     p_run.set_defaults(func=cmd_run)
 
-    p_doctor = sub.add_parser("doctor", help="Validate config + manifest and check required tools for existing projects.")
+    p_doctor = sub.add_parser(
+        "doctor", help="Validate config + manifest and check required tools for existing projects."
+    )
     p_doctor.set_defaults(func=cmd_doctor)
 
     p_vendor = sub.add_parser("vendor", help="Vendoring helpers for external templates.")

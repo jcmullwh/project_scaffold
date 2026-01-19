@@ -13,6 +13,63 @@ distribution = false
 test = [
   "pytest>=8.0.0",
   "cookiecutter>=2.6.0",
+  "coverage[toml]>=7.0.0",
+  "deptry>=0.20.0",
+  "mypy>=1.8.0",
+  "pre-commit>=3.6.0",
+  "ruff>=0.14.0",
+  "tomli>=2.0.0",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["tests"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.deptry]
+extend_exclude = [
+  ".*tools[\\\\/]templates[\\\\/]",
+]
+per_rule_ignores = { DEP004 = ["tomli"] }
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+strict = true
+exclude = "(^templates[\\\\/].*[\\\\/]tools[\\\\/]templates[\\\\/])"
+
+[[tool.mypy.overrides]]
+module = [
+  "cookiecutter.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "tomli",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+exclude = [
+  "templates/**/tools/templates/**",
+]
+
+[tool.ruff.lint]
+select = [
+  "B",
+  "E",
+  "F",
+  "I",
+  "UP",
+]
+ignore = [
+  "UP017",
 ]
 
 [tool.pytest.ini_options]

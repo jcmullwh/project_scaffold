@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   matrix:
     runs-on: ubuntu-latest
@@ -38,10 +42,35 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        if: ${{ matrix.id != '__no_projects__' }}
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml', '**/requirements*.txt', '**/pdm.lock', '**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - uses: actions/setup-node@v4
         if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'node' }}
         with:
           node-version: "20"
+
+      - uses: hashicorp/setup-terraform@v3
+        if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'terraform' }}
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'node' }}
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Doctor
+        if: ${{ matrix.id != '__no_projects__' }}
+        run: python tools/scaffold/scaffold.py doctor
 
       - name: Install
         if: ${{ matrix.id != '__no_projects__' }}

@@ -104,6 +104,12 @@ def test_template_renders_and_internal_templates_are_not_rendered(tmp_path: Path
     assert (repo_root / "tools" / "scaffold" / "registry.toml").exists()
     assert (repo_root / "tools" / "scaffold" / "monorepo.toml").exists()
 
+    workflow_path = repo_root / ".github" / "workflows" / "ci.yml"
+    assert workflow_path.exists()
+    workflow = workflow_path.read_text(encoding="utf-8")
+    assert "scaffold.py doctor" in workflow
+    assert "scaffold.py run install" in workflow
+
     # Internal cookiecutter template should be copied without render (literal {{cookiecutter.*}} path exists).
     internal_cc = (
         repo_root
@@ -142,6 +148,124 @@ def test_scaffold_add_internal_cookiecutter(tmp_path: Path) -> None:
     assert cp.returncode == 0, cp.stderr
 
 
+def test_scaffold_add_pdm_generators_no_install(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-pdm")
+
+    cp = _run_scaffold(
+        repo_root,
+        "add",
+        "lib",
+        "mylib",
+        "--generator",
+        "python_pdm_lib",
+        "--no-install",
+    )
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "packages" / "mylib" / "pyproject.toml").exists()
+
+    cp = _run_scaffold(
+        repo_root,
+        "add",
+        "app",
+        "myapp",
+        "--generator",
+        "python_pdm_app",
+        "--no-install",
+    )
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "myapp" / "pyproject.toml").exists()
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    projects = manifest.get("projects", [])
+    assert isinstance(projects, list)
+
+    by_id = {p.get("id"): p for p in projects if isinstance(p, dict)}
+    assert by_id["mylib"]["generator"] == "python_pdm_lib"
+    assert by_id["mylib"]["package_manager"] == "pdm"
+    assert by_id["mylib"]["tasks"]["install"] == ["pdm", "install"]
+    assert by_id["mylib"]["tasks"]["test"] == ["pdm", "run", "pytest", "-q"]
+
+    assert by_id["myapp"]["generator"] == "python_pdm_app"
+    assert by_id["myapp"]["package_manager"] == "pdm"
+    assert by_id["myapp"]["tasks"]["install"] == ["pdm", "install"]
+    assert by_id["myapp"]["tasks"]["test"] == ["pdm", "run", "pytest", "-q"]
+
+
+def test_manifest_preserves_unknown_project_keys(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-manifest-preserve")
+
+    cp = _run_scaffold(repo_root, "add", "app", "billing-api")
+    assert cp.returncode == 0, cp.stderr
+
+    manifest_path = repo_root / "tools" / "scaffold" / "monorepo.toml"
+    original = manifest_path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    for idx, line in enumerate(lines):
+        if line.strip() == "[[projects]]":
+            lines.insert(idx + 1, 'owner = "team-x"')
+            break
+    manifest_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+    cp = _run_scaffold(repo_root, "add", "app", "payments-api")
+    assert cp.returncode == 0, cp.stderr
+
+    import tomllib
+
+    manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    projects = manifest.get("projects", [])
+    assert isinstance(projects, list)
+    by_id = {p.get("id"): p for p in projects if isinstance(p, dict)}
+    assert by_id["billing-api"]["owner"] == "team-x"
+
+
+def test_scaffold_add_fails_when_ci_task_missing(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-missing-ci-task")
+
+    registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
+    registry_path.write_text(
+        registry_path.read_text(encoding="utf-8")
+        + "\n"
+        + "\n"
+        + "[kinds.badkind]\n"
+        + 'output_dir = "apps"\n'
+        + 'default_generator = "bad_gen"\n'
+        + "ci = { lint = false, test = true, build = false }\n"
+        + "\n"
+        + "[generators.bad_gen]\n"
+        + 'type = "copy"\n'
+        + 'source = "tools/templates/internal/python-stdlib-copy"\n'
+        + 'toolchain = "python"\n'
+        + 'package_manager = "none"\n'
+        + 'substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }\n'
+        + 'tasks.lint = ["python", "-m", "compileall", "src"]\n',
+        encoding="utf-8",
+    )
+
+    cp = _run_scaffold(repo_root, "add", "badkind", "oopsproj")
+    assert cp.returncode != 0
+    assert "tasks.test" in (cp.stdout + cp.stderr)
+
+
+def test_scaffold_add_records_poetry_generator(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-poetry")
+
+    cp = _run_scaffold(repo_root, "add", "app", "poetry-app", "--generator", "python_poetry_app", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "poetry-app" / "pyproject.toml").exists()
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    projects = manifest.get("projects", [])
+    assert isinstance(projects, list)
+    by_id = {p.get("id"): p for p in projects if isinstance(p, dict)}
+    assert by_id["poetry-app"]["generator"] == "python_poetry_app"
+    assert by_id["poetry-app"]["package_manager"] == "poetry"
+    assert by_id["poetry-app"]["tasks"]["install"] == ["poetry", "install"]
+
+
 def test_scaffold_add_command_generator(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-cmd")
 
@@ -156,6 +280,7 @@ def test_scaffold_add_command_generator(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
+    check_created = "import pathlib, sys; sys.exit(0 if pathlib.Path('CREATED_BY_COMMAND.txt').exists() else 1)"
     registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
     registry_path.write_text(
         registry_path.read_text(encoding="utf-8")
@@ -166,8 +291,8 @@ def test_scaffold_add_command_generator(tmp_path: Path) -> None:
         + 'toolchain = "generic"\n'
         + 'package_manager = "none"\n'
         + 'command = ["python", "tools/scaffold/test_command_generator.py", "{dest_dir}"]\n'
-        + 'tasks.lint = ["python", "-c", "import pathlib, sys; sys.exit(0 if pathlib.Path(\\\"CREATED_BY_COMMAND.txt\\\").exists() else 1)"]\n'
-        + 'tasks.test = ["python", "-c", "import pathlib, sys; sys.exit(0 if pathlib.Path(\\\"CREATED_BY_COMMAND.txt\\\").exists() else 1)"]\n',
+        + f'tasks.lint = ["python", "-c", "{check_created}"]\n'
+        + f'tasks.test = ["python", "-c", "{check_created}"]\n',
         encoding="utf-8",
     )
 
@@ -230,7 +355,11 @@ def test_external_cookiecutter_trust_gate_and_vendoring(tmp_path: Path) -> None:
     subprocess.run(["git", "add", "."], cwd=str(upstream_dir), check=True)
     subprocess.run(["git", "commit", "-m", "update"], cwd=str(upstream_dir), check=True, capture_output=True)
     new_rev = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=str(upstream_dir), check=True, text=True, capture_output=True
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(upstream_dir),
+        check=True,
+        text=True,
+        capture_output=True,
     ).stdout.strip()
 
     cp = _run_scaffold(repo_root, "vendor", "update", "vendored_local", "--ref", new_rev)
