@@ -1,8 +1,12 @@
 __pycache__/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+__pypackages__/
+.pdm-python
 .scaffold/
 
 node_modules/
 dist/
 build/
-

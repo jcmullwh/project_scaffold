@@ -148,6 +148,18 @@ def test_scaffold_add_internal_cookiecutter(tmp_path: Path) -> None:
     assert cp.returncode == 0, cp.stderr
 
 
+def test_registry_node_vite_uses_dest_path(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-registry-vite")
+
+    import tomllib
+
+    registry = tomllib.loads((repo_root / "tools" / "scaffold" / "registry.toml").read_text(encoding="utf-8"))
+    node_vite = registry["generators"]["node_vite"]
+    assert node_vite["type"] == "command"
+    assert node_vite["command"][3] == "{dest_path}"
+    assert "{dest_dir}" not in node_vite["command"]
+
+
 def test_scaffold_add_pdm_generators_no_install(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-pdm")
 
@@ -176,6 +188,12 @@ def test_scaffold_add_pdm_generators_no_install(tmp_path: Path) -> None:
     assert (repo_root / "apps" / "myapp" / "pyproject.toml").exists()
 
     import tomllib
+
+    lib_pyproject = tomllib.loads((repo_root / "packages" / "mylib" / "pyproject.toml").read_text(encoding="utf-8"))
+    assert lib_pyproject["tool"]["pdm"]["distribution"] is True
+
+    app_pyproject = tomllib.loads((repo_root / "apps" / "myapp" / "pyproject.toml").read_text(encoding="utf-8"))
+    assert app_pyproject["tool"]["pdm"]["distribution"] is True
 
     manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
     projects = manifest.get("projects", [])

@@ -217,6 +217,33 @@ def _which(cmd: str) -> str | None:
     return shutil.which(cmd)
 
 
+def _resolve_argv(argv: list[str]) -> list[str]:
+    """Resolve argv[0] via PATH for cross-platform execution.
+
+    On Windows, common toolchain entrypoints (notably `npm`) are often `.cmd` shims. `subprocess.run()` cannot execute
+    `.cmd`/`.bat` files directly, so we invoke them via `cmd.exe /c`.
+    """
+
+    if not argv:
+        raise ScaffoldError("Internal error: empty argv")
+
+    cmd = argv[0]
+    if any(sep and sep in cmd for sep in ("/", "\\", os.path.sep, os.path.altsep)):
+        return argv
+
+    resolved = _which(cmd)
+    if resolved is None:
+        return argv
+
+    if os.name == "nt":
+        suffix = Path(resolved).suffix.lower()
+        if suffix in {".cmd", ".bat"}:
+            comspec = os.environ.get("ComSpec", "cmd.exe")
+            return [comspec, "/d", "/c", resolved, *argv[1:]]
+
+    return [resolved, *argv[1:]]
+
+
 def _require_on_path(cmd: str, *, why: str) -> None:
     if _which(cmd) is None:
         raise ScaffoldError(f"Required command not found on PATH: {cmd} ({why})")
@@ -229,9 +256,12 @@ def _run(
     env: dict[str, str] | None = None,
     capture: bool = False,
 ) -> subprocess.CompletedProcess[str]:
+    resolved_argv = _resolve_argv(argv)
     _eprint(f"+ ({cwd}) {' '.join(argv)}")
+    if resolved_argv != argv:
+        _eprint(f"  -> ({cwd}) {' '.join(resolved_argv)}")
     return subprocess.run(
-        argv,
+        resolved_argv,
         cwd=str(cwd),
         env=env,
         text=True,

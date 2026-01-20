@@ -22,17 +22,22 @@ List available kinds and generators, then scaffold a project and run its tasks:
 ## Cookiecutter sources
 
 - Local templates should be referenced as paths (for example `tools/templates/internal/my-template`).
-- External templates must be git-accessible sources (for example `https://…` git URLs, `gh:org/repo` shorthands, or `file://…` URIs that point at a git repo). Non-git HTTP/zip sources are not supported by this tool.
+- External templates must be git-accessible sources (for example `https://...` git URLs, `gh:org/repo` shorthands, or
+  `file://...` URIs that point at a git repo). Non-git HTTP/zip sources are not supported by this tool.
 
 ## Virtual environments
 
-This tool does not create or manage virtual environments. For Python projects, use whatever per-project environment strategy your generator and `tasks.*` imply (Poetry/uv/pip-tools/conda/PDM/venv/etc.). The scaffolder runs tasks exactly as recorded in `tools/scaffold/monorepo.toml`.
+This tool does not create or manage virtual environments. For Python projects, use whatever per-project environment
+strategy your generator and `tasks.*` imply (Poetry/uv/pip-tools/conda/PDM/venv/etc.). The scaffolder runs tasks exactly
+as recorded in `tools/scaffold/monorepo.toml`.
 
 ## Configuration model
 
 - Kinds and generators are defined in `tools/scaffold/registry.toml`.
-- Created projects are recorded in `tools/scaffold/monorepo.toml` and are the source of truth for repo-wide task execution and CI.
-- When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
+- Created projects are recorded in `tools/scaffold/monorepo.toml` and are the source of truth for repo-wide task execution
+  and CI.
+- When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define
+  `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
 
 ## Included generators (default registry)
 
@@ -54,13 +59,14 @@ Example:
 Cookiecutter templates can execute code via hooks. Treat external templates as untrusted by default:
 
 - Prefer pinning external templates to a git ref via `generators.<id>.ref`.
-- If a generator is configured with `trusted = false`, `scaffold add` will refuse to run it unless you pass `--trust` for that run.
+- If a generator is configured with `trusted = false`, `scaffold add` will refuse to run it unless you pass `--trust` for
+  that run.
 - For long-lived use, vendor the external template into this repo:
 
     python tools/scaffold/scaffold.py vendor import <generator_id> --as <vendored_id>
 
-Vendoring copies the upstream template into `tools/templates/vendor/<vendored_id>`, writes an `UPSTREAM.toml` with the pinned
-commit and license metadata, and appends a new generator entry to `tools/scaffold/registry.toml`.
+Vendoring copies the upstream template into `tools/templates/vendor/<vendored_id>`, writes an `UPSTREAM.toml` with the
+pinned commit and license metadata, and appends a new generator entry to `tools/scaffold/registry.toml`.
 
 ## Generator types (registry examples)
 
@@ -87,11 +93,14 @@ Cookiecutter (local or external; external should be pinned and untrusted by defa
 
 Command (anything that can create the destination directory):
 
+Prefer `{dest_path}` (repo-relative) over `{dest_dir}` (absolute), because some third-party generators do not handle
+absolute paths reliably.
+
     [generators.node_vite]
     type = "command"
     toolchain = "node"
     package_manager = "npm"
-    command = ["npm", "create", "vite@latest", "{dest_dir}"]
+    command = ["npm", "create", "vite@latest", "{dest_path}"]
     tasks.install = ["npm", "install"]
     tasks.build = ["npm", "run", "build"]
 
@@ -100,5 +109,5 @@ Command (anything that can create the destination directory):
 The repo-level workflow at `.github/workflows/ci.yml` is driven by the manifest:
 
 - `tools/scaffold/ci_matrix.py` reads `tools/scaffold/monorepo.toml` and emits a GitHub Actions matrix.
-- The CI job runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per project
-  based on each projectâ€™s `ci` flags and recorded `tasks.*` commands.
+- The CI job runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per
+  project based on each project's `ci` flags and recorded `tasks.*` commands.

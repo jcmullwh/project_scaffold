@@ -114,7 +114,7 @@ tasks.test = ["uv", "run", "pytest", "-q"]
 type = "command"
 toolchain = "node"
 package_manager = "npm"
-command = ["npm", "create", "vite@latest", "{dest_dir}", "--", "--template", "vanilla"]
+command = ["npm", "create", "vite@latest", "{dest_path}", "--", "--template", "vanilla"]
 tasks.install = ["npm", "install"]
 tasks.build = ["npm", "run", "build"]
 

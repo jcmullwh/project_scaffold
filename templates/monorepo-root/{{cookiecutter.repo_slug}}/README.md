@@ -43,6 +43,9 @@ Examples:
     python tools/scaffold/scaffold.py add app my-uv-app --generator python_uv_app --no-install
     python tools/scaffold/scaffold.py add web my-site --no-install
 
+Note: some command-based generators (for example `node_vite`) may require network access the first time they run (because
+`npm create ...@latest` can fetch packages).
+
 ## Requirements
 
 - Always: `python` (Python 3.11+ recommended).
@@ -60,6 +63,14 @@ See `tools/scaffold/README.md` for details.
 The monorepo stays toolchain-agnostic by recording explicit task commands (for example `tasks.test = ["pytest", "-q"]` or
 `tasks.build = ["npm", "run", "build"]`) instead of hardcoding Poetry/PDM/npm in CI scripts.
 
+## Internal templates
+
+This repo includes internal templates under `tools/templates/internal/`.
+
+These are intentionally copied without render as part of the initial monorepo Cookiecutter run, so you will see literal
+`{% raw %}{{cookiecutter.project_slug}}{% endraw %}` placeholders inside them. They are used later by
+`tools/scaffold/scaffold.py add ...`.
+
 ## External templates, trust, and vendoring
 
 Cookiecutter templates can execute code via hooks. For safety, registry entries for external templates should be pinned to
@@ -76,4 +87,4 @@ The centralized GitHub Actions workflow at `.github/workflows/ci.yml`:
 
 - builds a project matrix from `tools/scaffold/monorepo.toml` via `tools/scaffold/ci_matrix.py`
 - runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per project based on
-  the manifestâ€™s `ci` flags and `tasks.*` commands
+  the manifest's `ci` flags and `tasks.*` commands
