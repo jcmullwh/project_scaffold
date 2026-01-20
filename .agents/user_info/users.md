@@ -94,6 +94,27 @@ For each persona, fill in only what you actually know; leave unknowns when you d
 - Unknowns (things we suspect but haven't validated):
   - Whether they need project-to-project dependency wiring patterns beyond "create and run tasks".
 
+### Persona: Automation/agent runner (CI operator / Codex user)
+
+- Situation / trigger:
+  - Running `scaffold.py doctor` / `scaffold.py run ...` as part of CI or via an agentic tool, and needs failures to be
+    deterministic and debuggable.
+- Job to be done:
+  - Validate tool availability and run the same per-project tasks CI will enforce, without interactive prompts.
+- Motivating pain (why they would adopt this category of tool):
+  - Per-project tasks are often undocumented; automation needs a single, explicit entry point.
+- Constraints (shaping context, not complaints):
+  - Often non-interactive execution (no ability to answer prompts from tools like `npm create ...`).
+  - Approvals/sandboxing can be tool-specific (e.g., `codex exec` approvals are fixed; sandboxing is controlled via
+    `--sandbox`).
+- What counts as evidence (to decide it's a fit):
+  - Missing toolchain failures surface as clear `ScaffoldError` messages (not Python tracebacks).
+  - The manifest is sufficient to generate CI matrices and run tasks without additional glue scripts.
+- Deal-breakers:
+  - Interactive generators that block automation, or failures that are hard to attribute to missing prerequisites.
+- Unknowns (things we suspect but haven't validated):
+  - Whether non-interactive "scaffold add" is a real requirement vs a developer-only workflow.
+
 ### Persona: Generator/template contributor (maintainer / power user)
 
 - Situation / trigger:
@@ -195,6 +216,7 @@ For each persona, fill in only what you actually know; leave unknowns when you d
 - Variations worth exploring:
   - `npm` is a `.cmd` shim on PATH (common on Windows).
   - Network-restricted environments where `npm create ...@latest` cannot fetch dependencies.
+  - Non-interactive execution (agents/CI) where `npm create ...` can prompt and fail.
 - What counts as success (evidence):
   - `scaffold.py add web my-site` creates `apps/my-site` (no nested/duplicated absolute-path artifacts).
   - The command runner can execute `npm` on Windows (shim handling).
@@ -214,6 +236,8 @@ For each persona, fill in only what you actually know; leave unknowns when you d
 - Variations worth exploring:
   - PDM user config enabling venv mode (creates `.venv/` by default).
   - Lockfile/tooling group expectations (dev tools present vs missing).
+  - Per-project lockfiles (e.g., one `pdm.lock` per project) vs expecting a single monorepo-level lock.
+  - Missing toolchain on PATH (e.g., `uv` missing causes install/task failures unless using `--no-install`).
 - What counts as success (evidence):
   - `scaffold.py add app myapp --generator python_pdm_app` creates an importable package (no "distribution = false" import
     surprises).
@@ -225,6 +249,28 @@ For each persona, fill in only what you actually know; leave unknowns when you d
   - Could indicate missing toolchain, misconfigured tasks, or unclear docs about project manager behavior.
 - Unknowns this mission is meant to surface:
   - Which baseline tasks (format/typecheck/depcheck/etc.) should be standardized across generators.
+
+### Mission: Recover from partial adds (manifest vs on-disk state)
+
+- Intent:
+  - Recover cleanly when `scaffold.py add` fails partway through (missing tool, install failure, interactive generator).
+- Starting state:
+  - Generated monorepo; a project directory may exist on disk; the project may or may not be recorded in
+    `tools/scaffold/monorepo.toml`.
+- Variations worth exploring:
+  - Project recorded, but install failed (tool missing, network, bad config).
+  - Project created on disk, but not recorded in the manifest (command generator side effects after an error).
+- What counts as success (evidence):
+  - If recorded: user can fix prerequisites and re-run `scaffold.py run install --project <id>`, or unregister via
+    `scaffold.py remove <id>`.
+  - If not recorded: the recovery path is documented (manual manifest edit or a future "adopt/register existing" flow).
+- Likely forks:
+  - Delete the directory vs keep it and repair.
+  - Use `--no-install` to separate generation from installation when prerequisites are uncertain.
+- Failure meaning:
+  - Could indicate missing preflight checks, overly interactive generators, or gaps in "how to recover" documentation.
+- Unknowns this mission is meant to surface:
+  - Whether the tool should grow a first-class "adopt/register existing directory" command.
 
 ### Mission: Use an external Cookiecutter template safely (trust + vendoring)
 
@@ -271,8 +317,17 @@ For each persona, fill in only what you actually know; leave unknowns when you d
 
 - Field notes from downstream usage (generated repos) have highlighted common sharp edges; this repo now mitigates several:
   - Command generators: use repo-relative `{dest_path}` for Vite by default; scaffold runner handles Windows `.cmd` shims.
+  - Tool availability + recovery: missing commands raise `ScaffoldError` (no tracebacks); `scaffold add` preflights the
+    install tool when install will run; `scaffold remove` can unregister projects (optionally deleting the directory).
   - Python/PDM: PDM app template installs as a package (avoids import surprises); generated `.gitignore` ignores `.venv/`.
   - Docs: generated template docs avoid smart-quote mojibake and call out "internal templates copied without render".
+- Should `scaffold add` be "atomic" (only write to `monorepo.toml` after install succeeds), or keep the current behavior
+  (record the project even if install fails) as an audit trail?
+- Should `scaffold add` grow a `--dry-run` mode that prints tool requirements + planned actions without touching disk?
+- Should the scaffolder support an "adopt/register existing directory" flow to resolve orphaned on-disk projects that are
+  not in the manifest?
+- Should command generators be required to be non-interactive by policy, or should the tool add a `--non-interactive`
+  mode that rejects/polices interactive commands?
 - Should `doctor` proactively check `cookiecutter` availability (or only enforce it at `scaffold add` time)?
 - Should the default `web` generator pin `create-vite`/Vite versions for reproducibility, or treat it as inherently
   networked?

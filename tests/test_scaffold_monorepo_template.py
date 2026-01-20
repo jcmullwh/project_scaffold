@@ -238,6 +238,97 @@ def test_manifest_preserves_unknown_project_keys(tmp_path: Path) -> None:
     assert by_id["billing-api"]["owner"] == "team-x"
 
 
+def test_scaffold_remove_updates_manifest_and_can_delete_dir(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-remove")
+
+    cp = _run_scaffold(repo_root, "add", "app", "keepdir", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "keepdir").exists()
+
+    cp = _run_scaffold(repo_root, "remove", "keepdir")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "keepdir").exists()
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    by_id = {p.get("id"): p for p in manifest.get("projects", []) if isinstance(p, dict)}
+    assert "keepdir" not in by_id
+
+    cp = _run_scaffold(repo_root, "add", "app", "deldir", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "deldir").exists()
+
+    cp = _run_scaffold(repo_root, "remove", "deldir", "--delete-dir", "--yes")
+    assert cp.returncode == 0, cp.stderr
+    assert not (repo_root / "apps" / "deldir").exists()
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    by_id = {p.get("id"): p for p in manifest.get("projects", []) if isinstance(p, dict)}
+    assert "deldir" not in by_id
+
+
+def test_scaffold_add_preflights_missing_install_tool(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-preflight")
+
+    registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
+    registry_path.write_text(
+        registry_path.read_text(encoding="utf-8")
+        + "\n"
+        + "\n"
+        + "[generators.bad_install_tool]\n"
+        + 'type = "copy"\n'
+        + 'source = "tools/templates/internal/python-stdlib-copy"\n'
+        + 'toolchain = "python"\n'
+        + 'package_manager = "none"\n'
+        + 'substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }\n'
+        + 'tasks.install = ["definitely-not-on-path", "install"]\n'
+        + 'tasks.test = ["python", "-m", "compileall", "src"]\n',
+        encoding="utf-8",
+    )
+
+    cp = _run_scaffold(repo_root, "add", "app", "badproj", "--generator", "bad_install_tool")
+    assert cp.returncode == 2
+    assert "Required command not found on PATH: definitely-not-on-path" in (cp.stdout + cp.stderr)
+    assert "--no-install" in (cp.stdout + cp.stderr)
+    assert not (repo_root / "apps" / "badproj").exists()
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    by_id = {p.get("id"): p for p in manifest.get("projects", []) if isinstance(p, dict)}
+    assert "badproj" not in by_id
+
+
+def test_scaffold_run_missing_command_is_scaffold_error(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-missing-cmd")
+
+    registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
+    registry_path.write_text(
+        registry_path.read_text(encoding="utf-8")
+        + "\n"
+        + "\n"
+        + "[generators.bad_task_cmd]\n"
+        + 'type = "copy"\n'
+        + 'source = "tools/templates/internal/python-stdlib-copy"\n'
+        + 'toolchain = "python"\n'
+        + 'package_manager = "none"\n'
+        + 'substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }\n'
+        + 'tasks.lint = ["python", "-m", "compileall", "src"]\n'
+        + 'tasks.test = ["definitely-not-on-path", "--version"]\n',
+        encoding="utf-8",
+    )
+
+    cp = _run_scaffold(repo_root, "add", "app", "oops", "--generator", "bad_task_cmd")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "oops").exists()
+
+    cp = _run_scaffold(repo_root, "run", "test", "--project", "oops")
+    assert cp.returncode == 2
+    assert "Required command not found on PATH: definitely-not-on-path" in (cp.stdout + cp.stderr)
+    assert "Traceback" not in (cp.stdout + cp.stderr)
+
+
 def test_scaffold_add_fails_when_ci_task_missing(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-missing-ci-task")
 

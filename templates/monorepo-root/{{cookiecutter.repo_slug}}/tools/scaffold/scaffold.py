@@ -249,6 +249,12 @@ def _require_on_path(cmd: str, *, why: str) -> None:
         raise ScaffoldError(f"Required command not found on PATH: {cmd} ({why})")
 
 
+def _is_pathlike_cmd(cmd: str) -> bool:
+    """Return True if `cmd` looks like a path rather than a PATH entry."""
+
+    return any(sep and sep in cmd for sep in ("/", "\\", os.path.sep, os.path.altsep))
+
+
 def _run(
     argv: list[str],
     *,
@@ -260,14 +266,20 @@ def _run(
     _eprint(f"+ ({cwd}) {' '.join(argv)}")
     if resolved_argv != argv:
         _eprint(f"  -> ({cwd}) {' '.join(resolved_argv)}")
-    return subprocess.run(
-        resolved_argv,
-        cwd=str(cwd),
-        env=env,
-        text=True,
-        check=False,
-        capture_output=capture,
-    )
+    try:
+        return subprocess.run(
+            resolved_argv,
+            cwd=str(cwd),
+            env=env,
+            text=True,
+            check=False,
+            capture_output=capture,
+        )
+    except FileNotFoundError as exc:
+        cmd = argv[0] if argv else "<empty>"
+        if _is_pathlike_cmd(cmd):
+            raise ScaffoldError(f"Command not found: {cmd}") from exc
+        raise ScaffoldError(f"Required command not found on PATH: {cmd}") from exc
 
 
 def _parse_vars(kv_list: list[str]) -> dict[str, str]:
@@ -871,6 +883,20 @@ def cmd_add(args: argparse.Namespace) -> int:
     if gen_type not in {"copy", "cookiecutter", "command"}:
         raise ScaffoldError(f"Unknown generator type: {gen_type}")
 
+    # Preflight: if we're going to run tasks.install, fail early if the tool isn't available. This avoids leaving users
+    # with a "created + recorded, but cannot install" situation when the failure is simply a missing binary on PATH.
+    generator_tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    if not args.no_install:
+        install_cmd = generator_tasks.get("install")
+        if install_cmd is not None and install_cmd and not _is_pathlike_cmd(install_cmd[0]):
+            _require_on_path(
+                install_cmd[0],
+                why=(
+                    "install task selected (install tool must be available on PATH); "
+                    "use --no-install to generate without running install"
+                ),
+            )
+
     dest_rel = Path(output_dir) / name
     dest_dir = repo_root / dest_rel
     if dest_dir.exists():
@@ -955,6 +981,59 @@ def cmd_add(args: argparse.Namespace) -> int:
                 )
 
     print(f"Created project {project_id} at {dest_rel}")
+    return 0
+
+
+def cmd_remove(args: argparse.Namespace) -> int:
+    repo_root = _repo_root()
+    project_id = args.project_id
+
+    manifest = _load_manifest(repo_root)
+    projects_raw = manifest.get("projects", [])
+    if projects_raw is None:
+        projects_raw = []
+    if not isinstance(projects_raw, list):
+        raise ScaffoldError("monorepo.toml: expected [[projects]] array")
+    for project in projects_raw:
+        if not isinstance(project, dict):
+            raise ScaffoldError("monorepo.toml: each [[projects]] entry must be a table")
+    projects: list[dict[str, Any]] = cast(list[dict[str, Any]], projects_raw)
+
+    removed: dict[str, Any] | None = None
+    remaining: list[dict[str, Any]] = []
+    for project in projects:
+        if project.get("id") == project_id and removed is None:
+            removed = project
+            continue
+        remaining.append(project)
+
+    if removed is None:
+        raise ScaffoldError(f"Unknown project id: {project_id}")
+
+    path = removed.get("path")
+    if not isinstance(path, str) or not path:
+        raise ScaffoldError(f"{project_id}: missing/invalid path in monorepo.toml")
+
+    repo_root_resolved = repo_root.resolve()
+    project_dir = (repo_root / path).resolve()
+    try:
+        project_dir.relative_to(repo_root_resolved)
+    except ValueError as exc:
+        raise ScaffoldError(f"{project_id}: refusing to operate on path outside repo root: {path}") from exc
+
+    if args.delete_dir:
+        if not args.yes:
+            raise ScaffoldError("Refusing to delete project directory without --yes.")
+        if project_dir.exists():
+            shutil.rmtree(project_dir)
+            print(f"Deleted directory: {path}")
+        else:
+            _eprint(f"WARNING: project directory does not exist (nothing to delete): {path}")
+
+    manifest["projects"] = remaining
+    _write_manifest(_manifest_path(repo_root), manifest)
+
+    print(f"Removed project {project_id} from monorepo.toml")
     return 0
 
 
@@ -1375,6 +1454,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow creating a project even if kinds.<kind>.ci enables tasks the generator does not define.",
     )
     p_add.set_defaults(func=cmd_add)
+
+    p_remove = sub.add_parser("remove", help="Remove a project from the manifest (optionally delete its directory).")
+    p_remove.add_argument("project_id")
+    p_remove.add_argument(
+        "--delete-dir",
+        action="store_true",
+        help="Also delete the project directory on disk (requires --yes).",
+    )
+    p_remove.add_argument(
+        "--yes",
+        action="store_true",
+        help="Confirm a destructive operation (required with --delete-dir).",
+    )
+    p_remove.set_defaults(func=cmd_remove)
 
     p_run = sub.add_parser("run", help="Run a task across projects using the manifest.")
     p_run.add_argument("task")

@@ -12,6 +12,14 @@ List available kinds and generators, then scaffold a project and run its tasks:
     python tools/scaffold/scaffold.py add app billing-api
     python tools/scaffold/scaffold.py run test --project billing-api
 
+If you want to generate a project but *not* run its install step yet:
+
+    python tools/scaffold/scaffold.py add app billing-api --no-install
+
+If you need to unregister a project from the manifest:
+
+    python tools/scaffold/scaffold.py remove billing-api
+
 ## Minimal requirements
 
 - Always required: `python` on PATH (Python 3.11+ recommended; older Pythons need `tomli` installed to parse TOML).
@@ -19,17 +27,41 @@ List available kinds and generators, then scaffold a project and run its tasks:
 - Required only for external Cookiecutter sources and vendoring: `git` on PATH.
 - Required only for running tasks: whatever commands your `tasks.*` reference (e.g. `poetry`, `uv`, `npm`, `cargo`, `terraform`).
 
+Note: `scaffold.py add` runs `tasks.install` by default, and will fail early if the install tool is not on PATH. Use
+`--no-install` to create the project without running install.
+
+If install fails after generation, the project is still recorded in `tools/scaffold/monorepo.toml`. Fix the issue and
+re-run install (`scaffold.py run install --project <id>`), or unregister it (`scaffold.py remove <id>`).
+
 ## Cookiecutter sources
 
 - Local templates should be referenced as paths (for example `tools/templates/internal/my-template`).
 - External templates must be git-accessible sources (for example `https://...` git URLs, `gh:org/repo` shorthands, or
   `file://...` URIs that point at a git repo). Non-git HTTP/zip sources are not supported by this tool.
 
+## Template variables (`--vars`)
+
+`scaffold.py add` accepts repeatable `--vars k=v` pairs. On PowerShell, quote values that contain spaces:
+
+    python tools/scaffold/scaffold.py add app my-app --vars 'description=My App'
+
 ## Virtual environments
 
 This tool does not create or manage virtual environments. For Python projects, use whatever per-project environment
 strategy your generator and `tasks.*` imply (Poetry/uv/pip-tools/conda/PDM/venv/etc.). The scaffolder runs tasks exactly
 as recorded in `tools/scaffold/monorepo.toml`.
+
+## Removing projects
+
+The manifest (`tools/scaffold/monorepo.toml`) is the source of truth. If you need to remove a project from the manifest:
+
+    python tools/scaffold/scaffold.py remove <project_id>
+
+To also delete the project directory on disk:
+
+    python tools/scaffold/scaffold.py remove <project_id> --delete-dir --yes
+
+This does not attempt to undo any toolchain-level side effects (virtual environments, global caches, etc.).
 
 ## Configuration model
 
