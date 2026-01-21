@@ -346,11 +346,56 @@ def _classify_source(repo_root: Path, source: str) -> tuple[str, Path | None]:
     return "local_missing", path
 
 
-def _format_with_context(template: str, context: dict[str, str]) -> str:
+def _format_with_context(template: str, context: dict[str, str], *, where: str | None = None) -> str:
     try:
         return template.format_map(context)
     except KeyError as exc:
-        raise ScaffoldError(f"Unknown placeholder in template string: {exc}") from exc
+        prefix = f"{where}: " if where else ""
+        raise ScaffoldError(prefix + f"Unknown placeholder in template string: {exc}") from exc
+
+
+def _format_task_cmd(
+    cmd: list[str],
+    *,
+    context: dict[str, str],
+    substitutions: dict[str, str] | None,
+    where: str,
+) -> list[str]:
+    """Apply generator substitutions and {placeholders} to a single task command."""
+
+    out: list[str] = []
+    for idx, arg in enumerate(cmd):
+        if substitutions:
+            for token, replacement in substitutions.items():
+                arg = arg.replace(token, replacement)
+        out.append(_format_with_context(arg, context, where=f"{where}[{idx}]"))
+    return out
+
+
+def _format_tasks(
+    tasks: dict[str, list[str]],
+    *,
+    context: dict[str, str],
+    substitutions: dict[str, str] | None,
+    where: str,
+) -> dict[str, list[str]]:
+    """Apply generator substitutions and {placeholders} to each task command.
+
+    This lets tasks in `registry.toml` reference renamed paths (copy `substitutions`) and the scaffolder context (e.g.
+    `{name}`, `{name_snake}`, `{dest_path}`).
+
+    If any placeholder is unknown, this raises `ScaffoldError` (no partial formatting).
+    """
+
+    out: dict[str, list[str]] = {}
+    for task_name, cmd in tasks.items():
+        out[task_name] = _format_task_cmd(
+            cmd,
+            context=context,
+            substitutions=substitutions,
+            where=f"{where}.tasks.{task_name}",
+        )
+    return out
 
 
 def _build_context(
@@ -449,7 +494,11 @@ def _validate_ci_tasks(
         + "."
     )
     if not allow_missing:
-        raise ScaffoldError(msg + " Fix the generator tasks or disable those CI flags for the kind.")
+        raise ScaffoldError(
+            msg
+            + " Fix the generator tasks or disable those CI flags for the kind, "
+            + "or pass --allow-missing-ci-tasks for this run."
+        )
 
     _eprint("WARNING:", msg)
     _eprint(f"WARNING: Proceeding due to --allow-missing-ci-tasks; CI may fail for project '{project_id}'.")
@@ -552,13 +601,16 @@ def _generate_copy(
         for token, tmpl in substitutions_raw.items():
             if not isinstance(token, str) or not isinstance(tmpl, str):
                 raise ScaffoldError("copy generator substitutions must be a table of string->string")
-            substitutions[token] = _format_with_context(tmpl, context)
+            substitutions[token] = _format_with_context(
+                tmpl, context, where=f"generators.{generator['id']}.substitutions"
+            )
 
     _copy_tree_with_substitutions(source_dir=source_path, dest_dir=dest_dir, substitutions=substitutions)
 
     toolchain = _require_generator_str(generator, "toolchain")
     package_manager = _require_generator_str(generator, "package_manager")
     tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(tasks, context=context, substitutions=substitutions, where=f"generators.{generator['id']}")
     return GeneratedProjectInfo(
         path=str(dest_dir.relative_to(repo_root)).replace("\\", "/"),
         toolchain=toolchain,
@@ -725,6 +777,7 @@ def _generate_cookiecutter(
         shutil.move(str(generated_dir), str(dest_dir))
 
     tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(tasks, context=context, substitutions=None, where=f"generators.{generator['id']}")
     warnings: list[str] = []
     if source_kind == "external":
         warnings.append("External cookiecutter templates may execute code via hooks.")
@@ -750,7 +803,10 @@ def _generate_command(
     if not isinstance(command, list) or not command or not all(isinstance(x, str) and x for x in command):
         raise ScaffoldError("command generator requires 'command' as a non-empty string list")
 
-    formatted = [_format_with_context(arg, context) for arg in command]
+    formatted = [
+        _format_with_context(arg, context, where=f"generators.{generator['id']}.command[{idx}]")
+        for idx, arg in enumerate(command)
+    ]
 
     env = dict(os.environ)
     for k, v in context.items():
@@ -766,6 +822,7 @@ def _generate_command(
     toolchain = _require_generator_str(generator, "toolchain")
     package_manager = _require_generator_str(generator, "package_manager")
     tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(tasks, context=context, substitutions=None, where=f"generators.{generator['id']}")
     return GeneratedProjectInfo(
         path=str(dest_dir.relative_to(repo_root)).replace("\\", "/"),
         toolchain=toolchain,
@@ -1034,6 +1091,39 @@ def cmd_remove(args: argparse.Namespace) -> int:
     _write_manifest(_manifest_path(repo_root), manifest)
 
     print(f"Removed project {project_id} from monorepo.toml")
+    return 0
+
+
+def cmd_projects(args: argparse.Namespace) -> int:
+    repo_root = _repo_root()
+    projects = _load_projects(repo_root)
+
+    selected = projects
+    if args.kind is not None:
+        selected = [p for p in projects if p.get("kind") == args.kind]
+
+    rows: list[tuple[str, str, str, str, str]] = []
+    for project in selected:
+        project_id = project.get("id")
+        kind = project.get("kind")
+        path = project.get("path")
+        generator = project.get("generator")
+        package_manager = project.get("package_manager")
+        if not isinstance(project_id, str):
+            raise ScaffoldError("Invalid project entry in monorepo.toml")
+        if not isinstance(kind, str):
+            raise ScaffoldError("Invalid project entry in monorepo.toml")
+        if not isinstance(path, str):
+            raise ScaffoldError("Invalid project entry in monorepo.toml")
+        if not isinstance(generator, str):
+            raise ScaffoldError("Invalid project entry in monorepo.toml")
+        if not isinstance(package_manager, str):
+            raise ScaffoldError("Invalid project entry in monorepo.toml")
+        rows.append((project_id, kind, path, generator, package_manager))
+
+    for project_id, kind, path, generator, package_manager in sorted(rows, key=lambda r: r[0]):
+        print(f"{project_id}\t{kind}\t{path}\t{generator}\t{package_manager}")
+
     return 0
 
 
@@ -1468,6 +1558,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Confirm a destructive operation (required with --delete-dir).",
     )
     p_remove.set_defaults(func=cmd_remove)
+
+    p_projects = sub.add_parser("projects", help="List projects recorded in the manifest.")
+    p_projects.add_argument("--kind", help="Filter to a specific kind.")
+    p_projects.set_defaults(func=cmd_projects)
 
     p_run = sub.add_parser("run", help="Run a task across projects using the manifest.")
     p_run.add_argument("task")

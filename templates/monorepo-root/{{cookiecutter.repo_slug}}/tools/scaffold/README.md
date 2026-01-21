@@ -9,6 +9,7 @@ List available kinds and generators, then scaffold a project and run its tasks:
     python tools/scaffold/scaffold.py doctor
     python tools/scaffold/scaffold.py kinds
     python tools/scaffold/scaffold.py generators
+    python tools/scaffold/scaffold.py projects
     python tools/scaffold/scaffold.py add app billing-api
     python tools/scaffold/scaffold.py run test --project billing-api
 
@@ -45,11 +46,32 @@ re-run install (`scaffold.py run install --project <id>`), or unregister it (`sc
 
     python tools/scaffold/scaffold.py add app my-app --vars 'description=My App'
 
+## Task command templating
+
+Task commands in `registry.toml` are recorded into `monorepo.toml` when you run `scaffold.py add`. Task arguments support:
+
+- Copy-generator substitution tokens (for example `__NAME_SNAKE__`), using the generator's `substitutions` table.
+- `{...}` placeholders, using the scaffolder context (for example `{name}`, `{name_snake}`, `{dest_path}`, plus `--vars`).
+
+If you need a literal `{` or `}` in a task argument, escape it as {% raw %}`{{`{% endraw %} or {% raw %}`}}`{% endraw %}
+(Python format string rules).
+
 ## Virtual environments
 
 This tool does not create or manage virtual environments. For Python projects, use whatever per-project environment
 strategy your generator and `tasks.*` imply (Poetry/uv/pip-tools/conda/PDM/venv/etc.). The scaffolder runs tasks exactly
 as recorded in `tools/scaffold/monorepo.toml`.
+
+## Running tasks
+
+`scaffold.py run <task>` runs tasks recorded in `tools/scaffold/monorepo.toml`:
+
+    python tools/scaffold/scaffold.py run test --all
+    python tools/scaffold/scaffold.py run lint --kind app
+    python tools/scaffold/scaffold.py run build --project dashboard
+
+Use `--skip-missing` to skip projects that do not define the requested task (useful when projects intentionally have
+different task sets).
 
 ## Removing projects
 

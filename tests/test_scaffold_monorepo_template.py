@@ -268,6 +268,56 @@ def test_scaffold_remove_updates_manifest_and_can_delete_dir(tmp_path: Path) -> 
     assert "deldir" not in by_id
 
 
+def test_scaffold_projects_lists_manifest_projects(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-projects")
+
+    cp = _run_scaffold(repo_root, "add", "app", "proj-a", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    cp = _run_scaffold(repo_root, "add", "app", "proj-b", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+
+    cp = _run_scaffold(repo_root, "projects")
+    assert cp.returncode == 0, cp.stderr
+    out = cp.stdout.strip().splitlines()
+    assert any(line.startswith("proj-a\t") for line in out)
+    assert any(line.startswith("proj-b\t") for line in out)
+
+
+def test_tasks_are_formatted_when_recorded_in_manifest(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-task-format")
+
+    registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
+    registry_path.write_text(
+        registry_path.read_text(encoding="utf-8")
+        + "\n"
+        + "\n"
+        + "[generators.subst_tasks]\n"
+        + 'type = "copy"\n'
+        + 'source = "tools/templates/internal/python-stdlib-copy"\n'
+        + 'toolchain = "python"\n'
+        + 'package_manager = "none"\n'
+        + 'substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }\n'
+        + 'tasks.lint = ["python", "-m", "py_compile", "src/__NAME_SNAKE__/__init__.py"]\n'
+        + 'tasks.echo = ["python", "-c", "print(\\"{name_snake}\\")"]\n'
+        + 'tasks.test = ["python", "-m", "unittest", "discover", "-s", "tests"]\n',
+        encoding="utf-8",
+    )
+
+    cp = _run_scaffold(repo_root, "add", "app", "api", "--generator", "subst_tasks", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    by_id = {p.get("id"): p for p in manifest.get("projects", []) if isinstance(p, dict)}
+    tasks = by_id["api"]["tasks"]
+
+    assert tasks["lint"] == ["python", "-m", "py_compile", "src/api/__init__.py"]
+    assert "__NAME_SNAKE__" not in "".join(tasks["lint"])
+    assert tasks["echo"] == ["python", "-c", 'print("api")']
+    assert "{name_snake}" not in "".join(tasks["echo"])
+
+
 def test_scaffold_add_preflights_missing_install_tool(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-preflight")
 

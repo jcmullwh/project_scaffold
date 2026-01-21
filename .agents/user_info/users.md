@@ -67,6 +67,8 @@ For each persona, fill in only what you actually know; leave unknowns when you d
   - Generated monorepo can add multiple kinds of projects; task commands are explicit in a manifest; CI consumes the
     manifest; docs show a "golden path" to reproduce CI locally.
   - External template trust model works: untrusted generators are gated and can be vendored into the repo.
+  - `tools/scaffold/scaffold.py run <task>` can target `--project`/`--kind`/`--all`, and `--skip-missing` makes mixed
+    toolchains practical (some projects won't define every task).
 - Deal-breakers:
   - Hidden toolchain assumptions, silent fallbacks, or a scaffold that cannot be adapted without rewriting everything.
   - Cross-platform failures that are common in practice (e.g., Windows command shims, path handling).
@@ -88,6 +90,8 @@ For each persona, fill in only what you actually know; leave unknowns when you d
 - What counts as evidence (to decide it's a fit):
   - `tools/scaffold/scaffold.py add ...` creates a working project in the expected location.
   - `tools/scaffold/scaffold.py run ...` reproduces what CI runs for that project (no hidden behavior).
+  - Selectors (`--project`/`--kind`/`--all`) plus `--skip-missing` are enough to run useful cross-repo checks even when
+    projects intentionally define different task sets.
 - Deal-breakers:
   - "Works on Linux only" in practice when their workstation is Windows/macOS.
   - Tasks that look present but fail due to missing toolchain with unclear messaging.
@@ -319,6 +323,9 @@ For each persona, fill in only what you actually know; leave unknowns when you d
   - Command generators: use repo-relative `{dest_path}` for Vite by default; scaffold runner handles Windows `.cmd` shims.
   - Tool availability + recovery: missing commands raise `ScaffoldError` (no tracebacks); `scaffold add` preflights the
     install tool when install will run; `scaffold remove` can unregister projects (optionally deleting the directory).
+  - Manifest ergonomics: `scaffold projects` lists what is recorded in `tools/scaffold/monorepo.toml`.
+  - Task templating: generator task commands support substitutions/placeholders so recorded task paths match generated
+    file/layout substitutions (no leftover `__NAME_SNAKE__` / `{name_snake}` when used).
   - Python/PDM: PDM app template installs as a package (avoids import surprises); generated `.gitignore` ignores `.venv/`.
   - Docs: generated template docs avoid smart-quote mojibake and call out "internal templates copied without render".
 - Should `scaffold add` be "atomic" (only write to `monorepo.toml` after install succeeds), or keep the current behavior
