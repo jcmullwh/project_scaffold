@@ -578,6 +578,219 @@ class GeneratedProjectInfo:
     provenance: dict[str, Any]
 
 
+def _compute_copy_substitutions(*, generator: dict[str, Any], context: dict[str, str]) -> dict[str, str]:
+    """Compute formatted copy-token substitutions without writing files."""
+    substitutions_raw = generator.get("substitutions", {})
+    substitutions: dict[str, str] = {}
+    if substitutions_raw is None:
+        return substitutions
+    if not isinstance(substitutions_raw, dict):
+        raise ScaffoldError("copy generator substitutions must be a table of string->string")
+    for token, tmpl in substitutions_raw.items():
+        if not isinstance(token, str) or not isinstance(tmpl, str):
+            raise ScaffoldError("copy generator substitutions must be a table of string->string")
+        substitutions[token] = _format_with_context(
+            tmpl,
+            context,
+            where=f"generators.{generator['id']}.substitutions",
+        )
+    return substitutions
+
+
+def _plan_generate_copy(
+    *,
+    repo_root: Path,
+    generator: dict[str, Any],
+    dest_dir: Path,
+    context: dict[str, str],
+) -> GeneratedProjectInfo:
+    """Validate and compute what a copy generator would record, without copying files."""
+    source = _require_generator_str(generator, "source")
+
+    source_kind, source_path = _classify_source(repo_root, source)
+    if source_kind != "local" or source_path is None:
+        raise ScaffoldError(f"copy generator source must be a local directory path: {source}")
+    if not source_path.is_dir():
+        raise ScaffoldError(f"copy generator source is not a directory: {source_path}")
+
+    substitutions = _compute_copy_substitutions(generator=generator, context=context)
+    toolchain = _require_generator_str(generator, "toolchain")
+    package_manager = _require_generator_str(generator, "package_manager")
+    tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(
+        tasks,
+        context=context,
+        substitutions=substitutions,
+        where=f"generators.{generator['id']}",
+    )
+    return GeneratedProjectInfo(
+        path=str(dest_dir.relative_to(repo_root)).replace("\\", "/"),
+        toolchain=toolchain,
+        package_manager=package_manager,
+        tasks=tasks,
+        warnings=[],
+        provenance={},
+    )
+
+
+def _plan_generate_cookiecutter(
+    *,
+    repo_root: Path,
+    registry: dict[str, Any],
+    generator: dict[str, Any],
+    dest_dir: Path,
+    context: dict[str, str],
+    user_vars: dict[str, str],
+    trust_external: bool,
+    allow_unpinned: bool,
+) -> GeneratedProjectInfo:
+    """Validate and compute what a cookiecutter generator would record, without running cookiecutter."""
+    _require_on_path("cookiecutter", why="cookiecutter generator selected")
+
+    source = _require_generator_str(generator, "source")
+    toolchain = _require_generator_str(generator, "toolchain")
+    package_manager = _require_generator_str(generator, "package_manager")
+
+    ref = generator.get("ref")
+    directory = generator.get("directory")
+    trusted = bool(generator.get("trusted", False))
+
+    source_kind, local_path = _classify_source(repo_root, source)
+
+    if source_kind == "external":
+        if not trusted and not trust_external:
+            raise ScaffoldError(
+                f"Refusing to run untrusted external template '{generator['id']}'. Re-run with --trust, or vendor it."
+            )
+        if not allow_unpinned and not (isinstance(ref, str) and ref):
+            raise ScaffoldError(
+                f"External generator '{generator['id']}' is missing 'ref'. "
+                f"Set generators.{generator['id']}.ref or use --allow-unpinned."
+            )
+        _require_on_path("git", why="external cookiecutter source selected")
+        if directory is not None and (not isinstance(directory, str) or not directory):
+            raise ScaffoldError("cookiecutter generator 'directory' must be a non-empty string")
+    elif source_kind == "local" and local_path is not None:
+        template_path = local_path
+        if directory is not None:
+            if not isinstance(directory, str) or not directory:
+                raise ScaffoldError("cookiecutter generator 'directory' must be a non-empty string")
+            template_path = template_path / directory
+        if not template_path.exists():
+            raise ScaffoldError(f"cookiecutter template path does not exist: {template_path}")
+    else:
+        raise ScaffoldError(f"cookiecutter generator source does not exist: {source}")
+
+    tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(tasks, context=context, substitutions=None, where=f"generators.{generator['id']}")
+    warnings: list[str] = []
+    if source_kind == "external":
+        warnings.append("External cookiecutter templates may execute code via hooks.")
+
+    return GeneratedProjectInfo(
+        path=str(dest_dir.relative_to(repo_root)).replace("\\", "/"),
+        toolchain=toolchain,
+        package_manager=package_manager,
+        tasks=tasks,
+        warnings=warnings,
+        provenance={},
+    )
+
+
+def _plan_generate_command(
+    *,
+    repo_root: Path,
+    generator: dict[str, Any],
+    dest_dir: Path,
+    context: dict[str, str],
+) -> tuple[GeneratedProjectInfo, list[str]]:
+    """Validate and compute what a command generator would record, without executing its command."""
+    command = generator.get("command")
+    if not isinstance(command, list) or not command or not all(isinstance(x, str) and x for x in command):
+        raise ScaffoldError("command generator requires 'command' as a non-empty string list")
+
+    formatted = [
+        _format_with_context(arg, context, where=f"generators.{generator['id']}.command[{idx}]")
+        for idx, arg in enumerate(command)
+    ]
+    if not _is_pathlike_cmd(formatted[0]):
+        _require_on_path(formatted[0], why="command generator selected")
+
+    toolchain = _require_generator_str(generator, "toolchain")
+    package_manager = _require_generator_str(generator, "package_manager")
+    tasks = _normalize_tasks(generator.get("tasks"), where=f"generators.{generator['id']}")
+    tasks = _format_tasks(tasks, context=context, substitutions=None, where=f"generators.{generator['id']}")
+    info = GeneratedProjectInfo(
+        path=str(dest_dir.relative_to(repo_root)).replace("\\", "/"),
+        toolchain=toolchain,
+        package_manager=package_manager,
+        tasks=tasks,
+        warnings=[],
+        provenance={},
+    )
+    return info, formatted
+
+
+def _print_dry_run_add_plan(
+    *,
+    repo_root: Path,
+    kind: str,
+    name: str,
+    dest_rel: Path,
+    generator_id: str,
+    generator: dict[str, Any],
+    gen_origin: str,
+    info: GeneratedProjectInfo,
+    ci: dict[str, Any],
+    would_run_install: bool,
+    formatted_command: list[str] | None,
+) -> None:
+    """Print a stable, human-readable plan for `scaffold add --dry-run`."""
+    dest_display = str(dest_rel).replace("\\", "/")
+    gen_type = generator.get("type")
+
+    print(f"DRY RUN: scaffold add {kind} {name}")
+    print(f"Destination: {dest_display}")
+    print(f"Generator: {generator_id} (type={gen_type}, origin={gen_origin})")
+    if formatted_command is not None:
+        print(f"Command: {' '.join(formatted_command)}")
+
+    where_prefix = f"kinds.{kind}.ci"
+    ci_lint = _ci_flag(ci, "lint", where_prefix=where_prefix)
+    ci_test = _ci_flag(ci, "test", where_prefix=where_prefix)
+    ci_build = _ci_flag(ci, "build", where_prefix=where_prefix)
+    print(
+        "CI: "
+        f"lint={'true' if ci_lint else 'false'} "
+        f"test={'true' if ci_test else 'false'} "
+        f"build={'true' if ci_build else 'false'}"
+    )
+
+    print("Would record in tools/scaffold/monorepo.toml:")
+    print(f"  id = {_toml_format_value(name)}")
+    print(f"  kind = {_toml_format_value(kind)}")
+    print(f"  path = {_toml_format_value(dest_display)}")
+    print(f"  generator = {_toml_format_value(generator_id)}")
+    print(f"  toolchain = {_toml_format_value(info.toolchain)}")
+    print(f"  package_manager = {_toml_format_value(info.package_manager)}")
+    print(f"  ci = {_toml_format_value(ci)}")
+    for task_name in sorted(info.tasks):
+        print(f"  tasks.{task_name} = {_toml_format_value(info.tasks[task_name])}")
+
+    if would_run_install:
+        install_cmd = info.tasks.get("install")
+        if install_cmd is None:
+            print("Would run install after generation: no (no install task configured)")
+        else:
+            print("Would run install after generation: yes")
+            print(f"  install = {_toml_format_value(install_cmd)}")
+    else:
+        if info.tasks.get("install") is None:
+            print("Would run install after generation: no (no install task configured)")
+        else:
+            print("Would run install after generation: no (--no-install)")
+
+
 def _generate_copy(
     *,
     repo_root: Path,
@@ -958,6 +1171,82 @@ def cmd_add(args: argparse.Namespace) -> int:
     dest_dir = repo_root / dest_rel
     if dest_dir.exists():
         raise ScaffoldError(f"Destination already exists: {dest_rel}")
+
+    if bool(args.dry_run):
+        user_vars = _parse_vars(args.vars or [])
+        context = _build_context(name=name, kind=kind, dest_rel=dest_rel, dest_abs=dest_dir, extra_vars=user_vars)
+
+        formatted_command: list[str] | None = None
+        if gen_type == "copy":
+            info = _plan_generate_copy(repo_root=repo_root, generator=generator, dest_dir=dest_dir, context=context)
+        elif gen_type == "cookiecutter":
+            info = _plan_generate_cookiecutter(
+                repo_root=repo_root,
+                registry=registry,
+                generator=generator,
+                dest_dir=dest_dir,
+                context=context,
+                user_vars=user_vars,
+                trust_external=bool(args.trust),
+                allow_unpinned=bool(args.allow_unpinned),
+            )
+        else:
+            info, formatted_command = _plan_generate_command(
+                repo_root=repo_root,
+                generator=generator,
+                dest_dir=dest_dir,
+                context=context,
+            )
+
+        manifest = _load_manifest(repo_root)
+        projects_raw = manifest.get("projects", [])
+        if projects_raw is None:
+            projects_raw = []
+        if not isinstance(projects_raw, list):
+            raise ScaffoldError("monorepo.toml: expected [[projects]] array")
+        for project in projects_raw:
+            if not isinstance(project, dict):
+                raise ScaffoldError("monorepo.toml: each [[projects]] entry must be a table")
+        existing_projects: list[dict[str, Any]] = cast(list[dict[str, Any]], projects_raw)
+        project_id = name
+        _ensure_unique_project_id(existing_projects, project_id)
+
+        ci = kind_cfg.get("ci", {"lint": False, "test": False, "build": False})
+        if not isinstance(ci, dict):
+            raise ScaffoldError(f"kinds.{kind}.ci must be a table")
+
+        _validate_ci_tasks(
+            ci=ci,
+            tasks=info.tasks,
+            kind=kind,
+            generator_id=generator_id,
+            project_id=project_id,
+            allow_missing=bool(args.allow_missing_ci_tasks),
+        )
+
+        gen_origin = "local" if gen_type == "command" else "n/a"
+        src = generator.get("source")
+        if isinstance(src, str):
+            gen_origin = _classify_source(repo_root, src)[0]
+
+        would_run_install = (not bool(args.no_install)) and (info.tasks.get("install") is not None)
+        _print_dry_run_add_plan(
+            repo_root=repo_root,
+            kind=kind,
+            name=name,
+            dest_rel=dest_rel,
+            generator_id=generator_id,
+            generator=generator,
+            gen_origin=gen_origin,
+            info=info,
+            ci=ci,
+            would_run_install=would_run_install,
+            formatted_command=formatted_command,
+        )
+        for w in info.warnings:
+            _eprint(f"WARNING: {w}")
+        return 0
+
     dest_dir.parent.mkdir(parents=True, exist_ok=True)
 
     user_vars = _parse_vars(args.vars or [])
@@ -1522,6 +1811,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_add.add_argument("name")
     p_add.add_argument("--generator", help="Override the kind's default generator.")
     p_add.add_argument("--no-install", action="store_true", help="Skip running tasks.install after generation.")
+    p_add.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would be created/recorded without writing files or running generators.",
+    )
     p_add.add_argument(
         "--vars",
         action="append",

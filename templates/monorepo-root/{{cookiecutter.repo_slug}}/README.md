@@ -18,6 +18,7 @@ List what you can scaffold, then create a project and run its tasks:
     python tools/scaffold/scaffold.py kinds
     python tools/scaffold/scaffold.py generators
     python tools/scaffold/scaffold.py add app billing-api
+    python tools/scaffold/scaffold.py add app billing-api --dry-run
     python tools/scaffold/scaffold.py run test --project billing-api
 
 The manifest at `tools/scaffold/monorepo.toml` is the source of truth for what projects exist and what tasks they run.
@@ -36,12 +37,18 @@ These generators require `pdm` on PATH to run `install`/`lint`/`test` tasks.
 - Poetry (Python): `python_poetry_app`
 - uv (Python): `python_uv_app`
 - Vite (Node): kind `web` defaults to `node_vite`
+- Go (stdlib): `go_stdlib_lib`
+- Rust (Cargo): `rust_cargo_lib`
+- TypeScript (Node): `node_typescript_lib`
 
 Examples:
 
     python tools/scaffold/scaffold.py add app my-poetry-app --generator python_poetry_app --no-install
     python tools/scaffold/scaffold.py add app my-uv-app --generator python_uv_app --no-install
     python tools/scaffold/scaffold.py add web my-site --no-install
+    python tools/scaffold/scaffold.py add lib my-go-lib --generator go_stdlib_lib --no-install
+    python tools/scaffold/scaffold.py add lib my-rust-lib --generator rust_cargo_lib --no-install
+    python tools/scaffold/scaffold.py add lib my-ts-lib --generator node_typescript_lib --no-install
 
 Note: some command-based generators (for example `node_vite`) may require network access the first time they run (because
 `npm create ...@latest` can fetch packages).

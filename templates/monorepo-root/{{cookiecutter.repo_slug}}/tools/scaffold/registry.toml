@@ -118,6 +118,35 @@ command = ["npm", "create", "vite@latest", "{dest_path}", "--", "--template", "v
 tasks.install = ["npm", "install"]
 tasks.build = ["npm", "run", "build"]
 
+[generators.node_typescript_lib]
+type = "copy"
+source = "tools/templates/internal/node-typescript-lib"
+toolchain = "node"
+package_manager = "npm"
+substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+tasks.install = ["npm", "install"]
+tasks.lint = ["npm", "run", "typecheck"]
+tasks.test = ["npm", "test"]
+tasks.build = ["npm", "run", "build"]
+
+[generators.go_stdlib_lib]
+type = "copy"
+source = "tools/templates/internal/go-stdlib-lib"
+toolchain = "go"
+package_manager = "none"
+substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+tasks.lint = ["go", "vet", "./..."]
+tasks.test = ["go", "test", "./..."]
+
+[generators.rust_cargo_lib]
+type = "copy"
+source = "tools/templates/internal/rust-cargo-lib"
+toolchain = "rust"
+package_manager = "cargo"
+substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+tasks.lint = ["cargo", "check"]
+tasks.test = ["cargo", "test"]
+
 [generators.terraform_module]
 type = "copy"
 source = "tools/templates/internal/terraform-module"

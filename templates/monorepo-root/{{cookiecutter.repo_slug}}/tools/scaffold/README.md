@@ -17,6 +17,13 @@ If you want to generate a project but *not* run its install step yet:
 
     python tools/scaffold/scaffold.py add app billing-api --no-install
 
+If you want to preview what would happen without writing anything:
+
+    python tools/scaffold/scaffold.py add app billing-api --dry-run
+
+Dry run performs validations and prints a plan, but does not create directories, run generators, or modify
+`tools/scaffold/monorepo.toml`.
+
 If you need to unregister a project from the manifest:
 
     python tools/scaffold/scaffold.py remove billing-api
@@ -102,11 +109,18 @@ The default `tools/scaffold/registry.toml` includes:
 - `python_poetry_app` (Poetry-based Python project; requires `poetry` on PATH to run tasks)
 - `python_uv_app` (uv-based Python project; requires `uv` on PATH to run tasks)
 - `node_vite` (Vite-based Node project; requires `npm` on PATH to run tasks)
+- `node_typescript_lib` (TypeScript library skeleton; requires `npm` on PATH to run tasks; use `--no-install` to scaffold without running npm immediately)
+- `go_stdlib_lib` (Go library skeleton; requires `go` on PATH to run tasks)
+- `rust_cargo_lib` (Rust library skeleton; requires `cargo` on PATH to run tasks)
 - `terraform_module` (Terraform module skeleton)
 
 Example:
 
     python tools/scaffold/scaffold.py add lib my-lib --generator python_pdm_lib --no-install
+
+Example (Go):
+
+    python tools/scaffold/scaffold.py add lib my-go-lib --generator go_stdlib_lib --no-install
 
 ## Trust model (external templates)
 

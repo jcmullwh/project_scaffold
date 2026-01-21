@@ -211,6 +211,49 @@ def test_scaffold_add_pdm_generators_no_install(tmp_path: Path) -> None:
     assert by_id["myapp"]["tasks"]["test"] == ["pdm", "run", "pytest", "-q"]
 
 
+def test_scaffold_add_go_rust_and_typescript_generators_no_install(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-new-gens")
+
+    cp = _run_scaffold(repo_root, "add", "lib", "golib", "--generator", "go_stdlib_lib", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "packages" / "golib" / "go.mod").exists()
+
+    cp = _run_scaffold(repo_root, "add", "lib", "rustlib", "--generator", "rust_cargo_lib", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "packages" / "rustlib" / "Cargo.toml").exists()
+
+    cp = _run_scaffold(repo_root, "add", "lib", "tslib", "--generator", "node_typescript_lib", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "packages" / "tslib" / "package.json").exists()
+
+    import tomllib
+
+    manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
+    projects = manifest.get("projects", [])
+    assert isinstance(projects, list)
+    by_id = {p.get("id"): p for p in projects if isinstance(p, dict)}
+
+    assert by_id["golib"]["generator"] == "go_stdlib_lib"
+    assert by_id["golib"]["toolchain"] == "go"
+    assert by_id["golib"]["package_manager"] == "none"
+    assert by_id["golib"]["tasks"]["lint"] == ["go", "vet", "./..."]
+    assert by_id["golib"]["tasks"]["test"] == ["go", "test", "./..."]
+
+    assert by_id["rustlib"]["generator"] == "rust_cargo_lib"
+    assert by_id["rustlib"]["toolchain"] == "rust"
+    assert by_id["rustlib"]["package_manager"] == "cargo"
+    assert by_id["rustlib"]["tasks"]["lint"] == ["cargo", "check"]
+    assert by_id["rustlib"]["tasks"]["test"] == ["cargo", "test"]
+
+    assert by_id["tslib"]["generator"] == "node_typescript_lib"
+    assert by_id["tslib"]["toolchain"] == "node"
+    assert by_id["tslib"]["package_manager"] == "npm"
+    assert by_id["tslib"]["tasks"]["install"] == ["npm", "install"]
+    assert by_id["tslib"]["tasks"]["lint"] == ["npm", "run", "typecheck"]
+    assert by_id["tslib"]["tasks"]["test"] == ["npm", "test"]
+    assert by_id["tslib"]["tasks"]["build"] == ["npm", "run", "build"]
+
+
 def test_manifest_preserves_unknown_project_keys(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-manifest-preserve")
 
@@ -348,6 +391,74 @@ def test_scaffold_add_preflights_missing_install_tool(tmp_path: Path) -> None:
     manifest = tomllib.loads((repo_root / "tools" / "scaffold" / "monorepo.toml").read_text(encoding="utf-8"))
     by_id = {p.get("id"): p for p in manifest.get("projects", []) if isinstance(p, dict)}
     assert "badproj" not in by_id
+
+
+def test_scaffold_add_dry_run_prints_plan_and_makes_no_writes(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-dry-run-ok")
+
+    manifest_path = repo_root / "tools" / "scaffold" / "monorepo.toml"
+    before = manifest_path.read_text(encoding="utf-8")
+
+    cp = _run_scaffold(repo_root, "add", "app", "dryrunproj", "--dry-run")
+    assert cp.returncode == 0, cp.stderr
+    assert not (repo_root / "apps" / "dryrunproj").exists()
+
+    after = manifest_path.read_text(encoding="utf-8")
+    assert after == before
+
+    assert "DRY RUN: scaffold add app dryrunproj" in cp.stdout
+    assert "Destination: apps/dryrunproj" in cp.stdout
+    assert "Would record in tools/scaffold/monorepo.toml:" in cp.stdout
+
+
+def test_scaffold_add_dry_run_fails_when_destination_exists_and_makes_no_writes(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-dry-run-exists")
+
+    cp = _run_scaffold(repo_root, "add", "app", "existing", "--no-install")
+    assert cp.returncode == 0, cp.stderr
+    assert (repo_root / "apps" / "existing").exists()
+
+    manifest_path = repo_root / "tools" / "scaffold" / "monorepo.toml"
+    before = manifest_path.read_text(encoding="utf-8")
+
+    cp = _run_scaffold(repo_root, "add", "app", "existing", "--dry-run")
+    assert cp.returncode == 2
+    assert "Destination already exists" in (cp.stdout + cp.stderr)
+
+    after = manifest_path.read_text(encoding="utf-8")
+    assert after == before
+
+
+def test_scaffold_add_dry_run_preflights_missing_install_tool(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-dry-run-preflight")
+
+    registry_path = repo_root / "tools" / "scaffold" / "registry.toml"
+    registry_path.write_text(
+        registry_path.read_text(encoding="utf-8")
+        + "\n"
+        + "\n"
+        + "[generators.bad_install_tool_dry]\n"
+        + 'type = "copy"\n'
+        + 'source = "tools/templates/internal/python-stdlib-copy"\n'
+        + 'toolchain = "python"\n'
+        + 'package_manager = "none"\n'
+        + 'substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }\n'
+        + 'tasks.install = ["definitely-not-on-path", "install"]\n'
+        + 'tasks.test = ["python", "-m", "compileall", "src"]\n',
+        encoding="utf-8",
+    )
+
+    manifest_path = repo_root / "tools" / "scaffold" / "monorepo.toml"
+    before = manifest_path.read_text(encoding="utf-8")
+
+    cp = _run_scaffold(repo_root, "add", "app", "badproj", "--generator", "bad_install_tool_dry", "--dry-run")
+    assert cp.returncode == 2
+    assert "Required command not found on PATH: definitely-not-on-path" in (cp.stdout + cp.stderr)
+    assert "--no-install" in (cp.stdout + cp.stderr)
+    assert not (repo_root / "apps" / "badproj").exists()
+
+    after = manifest_path.read_text(encoding="utf-8")
+    assert after == before
 
 
 def test_scaffold_run_missing_command_is_scaffold_error(tmp_path: Path) -> None:

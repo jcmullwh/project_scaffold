@@ -56,6 +56,14 @@ jobs:
         with:
           node-version: "20"
 
+      - uses: actions/setup-go@v5
+        if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'go' }}
+        with:
+          go-version: "1.22"
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'rust' }}
+
       - uses: hashicorp/setup-terraform@v3
         if: ${{ matrix.id != '__no_projects__' && matrix.toolchain == 'terraform' }}
 
