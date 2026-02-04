@@ -1,0 +1,9 @@
+version: 1
+personas_dirs:
+  - .usertest/personas
+missions_dirs:
+  - .usertest/missions
+report_schemas_dir: .usertest/report_schemas
+defaults:
+  persona_id: project_scaffold_template_operator
+  mission_id: project_scaffold_smoke

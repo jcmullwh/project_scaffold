@@ -32,6 +32,7 @@ skip_covered = false
 [tool.deptry]
 extend_exclude = [
   ".*tools[\\\\/]templates[\\\\/]",
+  "templates[\\\\/].*[\\\\/]tools[\\\\/]monorepo_publish[\\\\/]",
 ]
 per_rule_ignores = { DEP004 = ["tomli"] }
 
@@ -39,7 +40,7 @@ per_rule_ignores = { DEP004 = ["tomli"] }
 python_version = "3.11"
 warn_unused_configs = true
 strict = true
-exclude = "(^templates[\\\\/].*[\\\\/]tools[\\\\/]templates[\\\\/])"
+exclude = "(^templates[\\\\/].*[\\\\/]tools[\\\\/](templates|monorepo_publish)[\\\\/])"
 
 [[tool.mypy.overrides]]
 module = [

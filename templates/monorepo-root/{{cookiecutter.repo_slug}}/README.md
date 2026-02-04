@@ -95,3 +95,11 @@ The centralized GitHub Actions workflow at `.github/workflows/ci.yml`:
 - builds a project matrix from `tools/scaffold/monorepo.toml` via `tools/scaffold/ci_matrix.py`
 - runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per project based on
   the manifest's `ci` flags and `tasks.*` commands
+
+## Publishing snapshots (GitLab PyPI)
+
+This repo includes a small publisher for snapshot (dev) builds of eligible monorepo Python packages:
+
+- Tool: `tools/monorepo_publish/publish_snapshots.py`
+- Workflow: `.github/workflows/publish-snapshots.yml`
+- Setup + usage: `tools/monorepo_publish/README.md`

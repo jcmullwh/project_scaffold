@@ -13,6 +13,9 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = true
 
+[tool.monorepo]
+status = "internal"
+
 [tool.pdm.dev-dependencies]
 dev = [
   "deptry>=0.20.0",
