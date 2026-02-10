@@ -4,6 +4,8 @@ This is a consolidated backlog of items requested or suggested during downstream
 
 These are inputs, not commitments; some items overlap or conflict.
 
+Note: This file was moved out of `.agents/user_info/` on 2026-02-07 to keep `user_info` focused on user context docs/templates.
+
 ## Scaffolder CLI (`tools/scaffold/scaffold.py`)
 
 | Category | Request | Deferred because | Notes / dependencies |

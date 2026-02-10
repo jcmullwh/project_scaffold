@@ -1,6 +1,6 @@
 ---
-id: project_scaffold_template_operator
-name: project_scaffold Template Operator Research Scientist 
+id: project_scaffold_template_operator_research_scientist
+name: project_scaffold Template Operator Research Scientist
 extends: developer_integrator
 tags: [project_scaffold]
 ---

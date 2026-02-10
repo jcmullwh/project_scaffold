@@ -1,6 +1,6 @@
 ---
-id: project_scaffold_template_operator
-name: project_scaffold Template Operator Web App 
+id: project_scaffold_template_operator_data_science
+name: project_scaffold Template Operator Data Science
 extends: developer_integrator
 tags: [project_scaffold]
 ---

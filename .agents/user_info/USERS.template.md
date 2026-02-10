@@ -4,6 +4,8 @@
 >
 > This is not a spec of exact steps. It should stay valid even as the UI/API changes.
 
+> This file is a template for a repo-root `USERS.md` (for example, when using an external runner that reads `USERS.md`).
+
 ## Status
 - Owner(s): [team / role]
 - Last reviewed: [YYYY-MM-DD]

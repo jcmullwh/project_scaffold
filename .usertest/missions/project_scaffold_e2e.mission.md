@@ -1,6 +1,6 @@
 ---
-id: project_scaffold_smoke
-name: "project_scaffold: Smoke"
+id: project_scaffold_e2e
+name: "project_scaffold: E2E"
 extends: first_output_smoke
 tags: [project_scaffold, p0]
 execution_mode: single_pass_inline_report

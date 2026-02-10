@@ -16,14 +16,14 @@ This change set makes those failure modes easier to understand and recover from,
 - improve missing-tool errors (raise `ScaffoldError` instead of `FileNotFoundError` tracebacks)
 - add a preflight check for the install tool when `scaffold add` will run install (fail early; suggest `--no-install`)
 - add a `scaffold remove` command to unregister a project (optional directory delete with explicit confirmation)
-- incorporate the notes into `.agents/user_info/users.md` (intent + personas + missions + open questions)
+- incorporate the notes into `USERS.md` (intent + personas + missions + open questions)
 
 ## Progress
 
 - [x] (2026-01-20) Create this ExecPlan and keep it updated.
 - [x] (2026-01-20) Update generated `tools/scaffold/scaffold.py` (preflight + remove + clearer missing-tool errors).
 - [x] (2026-01-20) Update generated scaffold docs to document recovery workflows and common gotchas.
-- [x] (2026-01-20) Update `.agents/user_info/users.md` to incorporate the new field notes.
+- [x] (2026-01-20) Update `USERS.md` to incorporate the new field notes.
 - [x] (2026-01-20) Add/adjust offline tests and run `pdm run pytest`.
 
 ## Surprises & Discoveries
@@ -62,7 +62,7 @@ This change set makes those failure modes easier to understand and recover from,
     - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md` documents `--no-install`, `remove`,
       and PowerShell `--vars` quoting.
   - Repo user notes:
-    - `.agents/user_info/users.md` incorporates the new downstream notes (missing tools, interactive generators,
+    - `USERS.md` incorporates the new downstream notes (missing tools, interactive generators,
       recovery, PowerShell quoting, per-project lockfiles, CI/task enforcement).
   - Tests:
     - `tests/test_scaffold_monorepo_template.py` adds coverage for `remove`, install-tool preflight, and missing-command
@@ -72,8 +72,8 @@ This change set makes those failure modes easier to understand and recover from,
 
 Key files:
 
-- `.agents/user_info/users_template.md`: canonical user-notes template (must not be edited as part of this work).
-- `.agents/user_info/users.md`: repo-specific user-notes document to update with downstream field notes.
+- `.agents/user_info/USERS.template.md`: canonical user-notes template (must not be edited as part of this work).
+- `USERS.md`: repo-specific user-notes document to update with downstream field notes.
 - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/scaffold.py`: the generated monorepo’s stdlib-only
   scaffolder CLI (add/run/doctor/vendor).
 - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md`: generated docs for the scaffolder CLI.
@@ -95,7 +95,7 @@ Key files:
 
 4) Update docs and repo user notes:
    - Document the recovery path for partial adds (re-run install, or unregister with remove).
-   - Capture the new downstream notes in `.agents/user_info/users.md` (missing tools, interactive generators, PowerShell
+   - Capture the new downstream notes in `USERS.md` (missing tools, interactive generators, PowerShell
      quoting, per-project lockfiles, and CI/task enforcement gotchas).
 
 5) Add tests and validate:
