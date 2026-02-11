@@ -8,6 +8,23 @@ This project has two related "repos" in play:
 
 This document describes the entry points and "source of truth" files for both.
 
+## High-level flow
+
+    Template repo (project_scaffold)
+      templates/monorepo-root/
+        |
+        |  cookiecutter (generation)
+        v
+    Generated monorepo (<repo_slug>/)
+      tools/scaffold/scaffold.py
+        |
+        |  reads: tools/scaffold/registry.toml  (kinds + generators)
+        |  writes: tools/scaffold/monorepo.toml (projects + recorded tasks)
+        v
+    CI + task execution
+      tools/scaffold/ci_matrix.py -> CI matrix
+      scaffold.py run <task> -> executes recorded tasks per project
+
 ## Template Repo (This Repo)
 
 Primary purpose: generate a monorepo template and validate it via offline tests.
@@ -75,4 +92,3 @@ Key files and directories:
 The scaffolder reads the registry and writes the manifest when you run `scaffold.py add`. The CI workflow reads the
 manifest to decide what to run. This design makes runs reproducible and auditable: the manifest is the canonical record
 of what happened and what commands are executed.
-
