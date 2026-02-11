@@ -41,5 +41,8 @@ jobs:
       - name: Deptry
         run: pdm run deptry .
 
+      - name: Pytest config guard
+        run: pdm run python tools/check_pytest_config.py
+
       - name: Pytest
         run: pdm run pytest

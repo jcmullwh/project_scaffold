@@ -13,10 +13,10 @@ This turns a confusing “syntax error while collecting templates” failure int
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-032` (fingerprint `2ce60657603c9bfa`).
-- [ ] Codify the expected pytest config invariants (at minimum `testpaths = ["tests"]`).
-- [ ] Add a runtime guard that checks the effective pytest config at startup and fails with a targeted message when misconfigured.
-- [ ] Add a CI check that asserts the expected pytest config keys exist in `pyproject.toml`.
-- [ ] Add/adjust tests if needed and run `pdm run pytest`.
+- [x] (2026-02-11) Codify the expected pytest config invariants (at minimum `testpaths = ["tests"]`).
+- [x] (2026-02-11) Add a runtime guard that checks the effective pytest config at startup and fails with a targeted message when misconfigured.
+- [x] (2026-02-11) Add a CI check that asserts the expected pytest config keys exist in `pyproject.toml`.
+- [x] (2026-02-11) Run `pdm run pytest`.
 
 ## Surprises & Discoveries
 
@@ -31,7 +31,10 @@ This turns a confusing “syntax error while collecting templates” failure int
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Added a root `conftest.py` that enforces `testpaths = ["tests"]` and fails early with a targeted message if pytest configuration drifts.
+  - Added `tools/check_pytest_config.py` and a CI step to assert the `pyproject.toml` pytest config remains present and correct.
+  - `pdm run pytest` passes with the new guards in place.
 
 ## Context and Orientation
 
