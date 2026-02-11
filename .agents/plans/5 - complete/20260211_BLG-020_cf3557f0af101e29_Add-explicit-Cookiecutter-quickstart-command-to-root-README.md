@@ -13,9 +13,9 @@ This plan focuses only on making the first generation step obvious and correct. 
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-020` (fingerprint `cf3557f0af101e29`).
-- [ ] Add a `Quick Start` section near the top of `README.md` with an explicit `cookiecutter templates/monorepo-root ...` command.
-- [ ] Document the two prompt variables (`repo_slug`, `repo_name`) and what they do, using the template’s `cookiecutter.json` as the source of truth.
-- [ ] Validate that the documented command works (at least via a no-input render in a temp folder).
+- [x] (2026-02-11) Add a `Quick Start` section near the top of `README.md` with an explicit `cookiecutter templates/monorepo-root ...` command.
+- [x] (2026-02-11) Document the two prompt variables (`repo_slug`, `repo_name`) and what they do, using the template’s `cookiecutter.json` as the source of truth.
+- [x] (2026-02-11) Validate that the documented command works (via a `--no-input` render into a temp folder).
 
 ## Surprises & Discoveries
 
@@ -30,7 +30,10 @@ This plan focuses only on making the first generation step obvious and correct. 
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `README.md` now includes an explicit Cookiecutter quickstart command (`cookiecutter templates/monorepo-root -o ...`).
+  - `README.md` now documents the `repo_slug` and `repo_name` prompts and points to `templates/monorepo-root/cookiecutter.json`.
+  - A deterministic `--no-input` smoke render was validated locally.
 
 ## Context and Orientation
 

@@ -22,6 +22,17 @@ From this repo root (template repo), generate a monorepo into an output director
 
     cookiecutter templates/monorepo-root -o <output_dir>
 
+Cookiecutter will prompt for:
+
+- `repo_slug`: the directory name for the generated repo (for example `my-monorepo`).
+- `repo_name`: a display name used in the generated repo docs (defaults to `repo_slug`).
+
+These variables are defined in `templates/monorepo-root/cookiecutter.json`.
+
+Deterministic smoke render (uses template defaults; does not prompt):
+
+    cookiecutter templates/monorepo-root --no-input -o .tmp
+
 Then, in the generated monorepo, run the scaffolder's `doctor` command:
 
     cd <output_dir>/<repo_slug>
