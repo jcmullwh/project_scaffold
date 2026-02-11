@@ -13,9 +13,9 @@ This work is documentation-only. It changes the story at the top of the repo so 
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-018` (fingerprint `a28a81f37504adb2`).
-- [ ] Update root `README.md` with an evaluator-first orientation block and clear entry-point links.
-- [ ] Ensure contributor setup details remain in `CONTRIBUTING.md` (and avoid mixing contributor steps into evaluator quickstart).
-- [ ] Validate the root README’s links/paths and that the “first success” path is copy-pasteable and context-labeled.
+- [x] (2026-02-11) Update root `README.md` with an evaluator-first orientation block and clear entry-point links.
+- [x] (2026-02-11) Ensure contributor setup details remain in `CONTRIBUTING.md` (and avoid mixing contributor steps into evaluator quickstart).
+- [x] (2026-02-11) Validate the root README’s links/paths and that the “first success” path is copy-pasteable and context-labeled.
 
 ## Surprises & Discoveries
 
@@ -30,7 +30,10 @@ This work is documentation-only. It changes the story at the top of the repo so 
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `README.md` now clearly states that this is a template repo that generates a separate monorepo repo.
+  - `README.md` now links directly to the generated monorepo docs (as template preview copies under `templates/`).
+  - `README.md` now contains a short “Quick Start (Generate a Monorepo)” that makes the evaluator entry path visible without reading contributor setup docs.
 
 ## Context and Orientation
 
