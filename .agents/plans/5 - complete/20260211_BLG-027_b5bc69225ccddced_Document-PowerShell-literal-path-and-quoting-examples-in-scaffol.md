@@ -16,14 +16,17 @@ The outcome is fewer “shell parsing” onboarding failures that look like prod
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-027` (fingerprint `b5bc69225ccddced`).
-- [ ] Identify doc locations where command examples are fragile in PowerShell.
-- [ ] Add a Windows/PowerShell note section with tested examples (quote rules for `--vars`, and `-LiteralPath` usage for cmdlets).
-- [ ] Validate the examples in a PowerShell session against the actual repo layout.
+- [x] (2026-02-11) Identify doc locations where command examples are fragile in PowerShell.
+- [x] (2026-02-11) Add a Windows/PowerShell note section with tested examples (quote rules for `--vars`, and `-LiteralPath` usage for cmdlets).
+- [x] (2026-02-11) Validate the examples in a PowerShell session against the actual repo layout.
 
 ## Surprises & Discoveries
 
 - Observation: The generated monorepo scaffolder docs already contain one PowerShell quoting example for `--vars`, but do not explain literal-path handling for brace-containing template directories.
   Evidence: `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md` includes “quote values that contain spaces” but does not mention `-LiteralPath`.
+
+- Observation: Unescaped `{{...}}` sequences in generated-doc templates can break monorepo generation because Cookiecutter/Jinja2 will attempt to render them.
+  Evidence: Adding a literal ``{{cookiecutter...}}`` example caused `cookiecutter templates/monorepo-root --no-input ...` to fail with a Jinja2 `TemplateSyntaxError` until the placeholder examples were wrapped in `{% raw %}...{% endraw %}`.
 
 ## Decision Log
 
@@ -33,7 +36,9 @@ The outcome is fewer “shell parsing” onboarding failures that look like prod
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md` now contains PowerShell-specific guidance for quoting `--vars` and inspecting brace-placeholder template paths with `-LiteralPath`.
+  - The PowerShell `-LiteralPath` example was validated against an actual generated monorepo render.
 
 ## Context and Orientation
 

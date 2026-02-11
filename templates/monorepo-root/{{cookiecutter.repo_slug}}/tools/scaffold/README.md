@@ -55,6 +55,17 @@ re-run install (`scaffold.py run install --project <id>`), or unregister it (`sc
 
     python tools/scaffold/scaffold.py add app my-app --vars 'description=My App'
 
+### PowerShell notes (quoting and brace paths)
+
+- Prefer single quotes around each `k=v` pair (for example `--vars 'description=My App'`), especially when values
+  contain spaces.
+- This monorepo includes internal templates with literal `{% raw %}{{cookiecutter.project_slug}}{% endraw %}` brace
+  placeholder directories under
+  `tools/templates/internal/`. On PowerShell, quote brace-containing paths and use `-LiteralPath` with cmdlets when
+  inspecting them. Example:
+
+    Get-ChildItem -LiteralPath 'tools/templates/internal/python-stdlib-cookiecutter/{% raw %}{{cookiecutter.project_slug}}{% endraw %}'
+
 ## Task command templating
 
 Task commands in `registry.toml` are recorded into `monorepo.toml` when you run `scaffold.py add`. Task arguments support:
