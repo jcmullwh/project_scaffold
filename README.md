@@ -53,6 +53,10 @@ Then, in the generated monorepo, run the scaffolder's `doctor` command:
 
 Success checkpoint: `doctor` prints `OK` and exits with code 0.
 
+Next, scaffold a small stdlib-only project without running installs:
+
+    python tools/scaffold/scaffold.py add lib demo-lib --generator python_stdlib_copy --no-install
+
 Generated-monorepo docs (as template preview copies in this repo):
 
 - `templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md`

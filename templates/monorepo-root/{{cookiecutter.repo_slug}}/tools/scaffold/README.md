@@ -2,6 +2,8 @@
 
 `tools/scaffold/scaffold.py` is a stdlib-only Python CLI for managing this monorepo.
 
+All commands in this document assume you run them from the monorepo root (the directory that contains `tools/`).
+
 ## Golden path
 
 List available kinds and generators, then scaffold a project and run its tasks:

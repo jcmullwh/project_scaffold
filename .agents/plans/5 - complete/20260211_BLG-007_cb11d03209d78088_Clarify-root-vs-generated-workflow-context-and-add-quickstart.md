@@ -16,10 +16,10 @@ The docs should explicitly label which directory each command is intended to be 
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-007` (fingerprint `cb11d03209d78088`).
-- [ ] Audit `README.md` and the generated-monorepo template docs for implicit context switches.
-- [ ] Update root `README.md` to include a generation-to-first-scaffold quickstart with explicit working-directory labels.
-- [ ] Update generated monorepo docs (`templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md` and/or `.../tools/scaffold/README.md`) with a short “what repo am I in?” note and a pointer back to the template repo context.
-- [ ] Validate the full path (generate -> `scaffold.py doctor` -> add a project) is readable and copy-pasteable.
+- [x] (2026-02-11) Audit `README.md` and the generated-monorepo template docs for implicit context switches.
+- [x] (2026-02-11) Update root `README.md` to include a generation-to-first-scaffold quickstart with explicit working-directory labels.
+- [x] (2026-02-11) Update generated monorepo docs (`templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md` and `.../tools/scaffold/README.md`) with a short “what repo am I in?” note.
+- [x] (2026-02-11) Validate the full path (generate -> `scaffold.py doctor` -> add a project) is readable and copy-pasteable.
 
 ## Surprises & Discoveries
 
@@ -34,7 +34,9 @@ The docs should explicitly label which directory each command is intended to be 
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Root `README.md` now explicitly labels template-repo vs generated-repo contexts and includes a “first scaffold” command (`scaffold.py add ... --no-install`).
+  - Generated monorepo docs now state that commands are run from the generated monorepo root and clarify the template-repo vs generated-repo split.
 
 ## Context and Orientation
 

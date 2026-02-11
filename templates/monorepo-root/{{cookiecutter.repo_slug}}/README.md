@@ -2,6 +2,12 @@
 
 This monorepo was generated from a Cookiecutter template.
 
+All commands in this README assume you run them from the generated monorepo root (the directory that contains this
+`README.md` and the `tools/` folder).
+
+If you are looking for the template source repo that generated this monorepo: it is a separate repository. In the
+template repo, you run Cookiecutter to generate a repo; in the generated repo, you use `tools/scaffold/scaffold.py`.
+
 ## Scaffold tool
 
 This repo includes `tools/scaffold/scaffold.py`, a small Python CLI that:
