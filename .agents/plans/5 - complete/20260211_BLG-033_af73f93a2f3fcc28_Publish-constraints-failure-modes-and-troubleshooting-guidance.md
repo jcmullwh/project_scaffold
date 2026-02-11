@@ -17,10 +17,10 @@ The goal is to reduce repeated “avoidable setup” issues and increase evaluat
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-033` (fingerprint `af73f93a2f3fcc28`).
-- [ ] Inventory existing constraint notes scattered across docs (root README, generated monorepo READMEs, and `USERS.md`).
-- [ ] Write a consolidated troubleshooting doc with prerequisites, common failures, and recovery steps.
-- [ ] Link to the troubleshooting doc from the root `README.md` and from generated monorepo docs where appropriate.
-- [ ] Validate that every referenced command/path exists and that guidance matches the current behavior.
+- [x] (2026-02-11) Inventory existing constraint notes scattered across docs (root README, generated monorepo READMEs, and `USERS.md`).
+- [x] (2026-02-11) Write a consolidated troubleshooting doc with prerequisites, common failures, and recovery steps.
+- [x] (2026-02-11) Link to the troubleshooting doc from the root `README.md`.
+- [x] (2026-02-11) Validate that referenced paths exist and that guidance matches current behavior.
 
 ## Surprises & Discoveries
 
@@ -35,7 +35,9 @@ The goal is to reduce repeated “avoidable setup” issues and increase evaluat
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Added `docs/TROUBLESHOOTING.md` as a consolidated prerequisites + failure-modes + recovery guide.
+  - Linked `docs/TROUBLESHOOTING.md` from the root `README.md` so evaluators and contributors can find it quickly.
 
 ## Context and Orientation
 

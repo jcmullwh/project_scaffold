@@ -6,6 +6,7 @@ stdlib-only scaffolder CLI (`tools/scaffold/scaffold.py`) for adding projects an
 ## Choose Your Path
 
 Architecture and entry points: see `docs/ARCHITECTURE.md`.
+Troubleshooting: see `docs/TROUBLESHOOTING.md`.
 
 Fastest smoke path (two contexts):
 
