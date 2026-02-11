@@ -16,10 +16,10 @@ Each track has a short, self-contained “first success” command sequence and 
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-011` (fingerprint `f66a67c23bbf3d39`).
-- [ ] Restructure `README.md` so the first screen offers two tracks with explicit “run this in directory X” context labels.
-- [ ] Add an end-to-end generation-first quickstart (template repo -> generated monorepo -> `scaffold.py doctor`) with copy-paste commands and an explicit success checkpoint.
-- [ ] Ensure contributor/dev setup remains correct and points to `CONTRIBUTING.md` for details.
-- [ ] Validate that both tracks are runnable on a clean clone (or are explicit about prerequisites).
+- [x] (2026-02-11) Restructure `README.md` so the first screen offers two tracks with explicit “run this in directory X” context labels.
+- [x] (2026-02-11) Add an end-to-end generation-first quickstart (template repo -> generated monorepo -> `scaffold.py doctor`) with copy-paste commands and an explicit success checkpoint.
+- [x] (2026-02-11) Ensure contributor/dev setup remains correct and points to `CONTRIBUTING.md` for details.
+- [x] (2026-02-11) Validate that both tracks are runnable (no-input render + `doctor`, and `pdm run pytest`).
 
 ## Surprises & Discoveries
 
@@ -34,7 +34,10 @@ Each track has a short, self-contained “first success” command sequence and 
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `README.md` now begins with a “Choose Your Path” fork that separates evaluator vs contributor workflows.
+  - The evaluator track is end-to-end and includes a concrete success checkpoint (`doctor` prints `OK`).
+  - The contributor track contains a minimal “first success” (`pdm run pytest`) and points to `CONTRIBUTING.md` for the full suite.
 
 ## Context and Orientation
 

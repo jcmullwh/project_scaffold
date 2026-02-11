@@ -3,20 +3,9 @@
 This repository is a Cookiecutter template repo. It generates a separate monorepo repository that includes a small
 stdlib-only scaffolder CLI (`tools/scaffold/scaffold.py`) for adding projects and running per-project tasks.
 
-If you are evaluating or adopting the generated monorepo, start with **Quick Start (Generate a Monorepo)** below.
+## Choose Your Path
 
-If you are contributing to this template repo (templates/tests/CI), start with **Dev (Template Repo)** and
-`CONTRIBUTING.md`.
-
-Generated-monorepo docs (as template preview copies in this repo):
-
-- `templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md`
-- `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md`
-
-Note: paths under `templates/` contain literal `{{cookiecutter...}}` placeholder braces because this repo stores the
-template source. On PowerShell, quote brace-containing paths when using them as command arguments.
-
-## Quick Start (Generate a Monorepo)
+### 1) Generate and use a monorepo (recommended for evaluation)
 
 From this repo root (template repo), generate a monorepo into an output directory:
 
@@ -38,11 +27,29 @@ Then, in the generated monorepo, run the scaffolder's `doctor` command:
     cd <output_dir>/<repo_slug>
     python tools/scaffold/scaffold.py doctor
 
-## Dev (Template Repo)
+Success checkpoint: `doctor` prints `OK` and exits with code 0.
+
+Generated-monorepo docs (as template preview copies in this repo):
+
+- `templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md`
+- `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md`
+
+Note: paths under `templates/` contain literal `{{cookiecutter...}}` placeholder braces because this repo stores the
+template source. On PowerShell, quote brace-containing paths when using them as command arguments.
+
+### 2) Contribute to the template repo (develop templates/tests/CI)
 
 This repo uses PDM for the development environment:
 
     pdm install
+
+First success test run:
+
+    pdm run pytest
+
+Success checkpoint: pytest passes.
+
+See `CONTRIBUTING.md` for the full local check suite.
 
 Run checks:
 
@@ -52,4 +59,4 @@ Run checks:
     pdm run deptry .
     pdm run pytest
 
-See `CONTRIBUTING.md` for details.
+Planning artifacts live in `.agents/`.
