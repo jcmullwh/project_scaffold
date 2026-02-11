@@ -12,6 +12,18 @@ Fastest smoke path (two contexts):
       cookiecutter templates/monorepo-root --no-input -o .tmp
       python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
 
+  This smoke path does not require `pdm install`. It requires only `cookiecutter` and `python` on PATH.
+
+  PowerShell one-liner:
+
+      cookiecutter templates/monorepo-root --no-input -o .tmp; python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
+
+  bash one-liner:
+
+      cookiecutter templates/monorepo-root --no-input -o .tmp && python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
+
+  Cleanup: delete `.tmp/`.
+
 - Validate the template repo dev environment (template repo):
 
       pdm install

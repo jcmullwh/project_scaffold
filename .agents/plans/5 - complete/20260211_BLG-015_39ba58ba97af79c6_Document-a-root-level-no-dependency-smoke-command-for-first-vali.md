@@ -13,10 +13,10 @@ The smoke path is intentionally minimal: it proves the template renders and the 
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-015` (fingerprint `39ba58ba97af79c6`).
-- [ ] Decide on a deterministic, safe smoke command sequence that does not require `pdm install`.
-- [ ] Add a prominently labeled “Fastest smoke” section near the top of `README.md` with copy-pasteable commands and a clear success checkpoint.
-- [ ] Ensure the smoke section explicitly labels which working directory each command runs in (template repo vs generated repo).
-- [ ] Validate the smoke commands locally (using the current environment) and keep them safe to re-run.
+- [x] (2026-02-11) Decide on a deterministic, safe smoke command sequence that does not require `pdm install`.
+- [x] (2026-02-11) Add a prominently labeled “Fastest smoke” section near the top of `README.md` with copy-pasteable commands and a clear success checkpoint.
+- [x] (2026-02-11) Ensure the smoke section explicitly labels which working directory each command runs in (template repo vs generated repo).
+- [x] (2026-02-11) Validate the smoke commands locally (cookiecutter `--no-input` render + `doctor`).
 
 ## Surprises & Discoveries
 
@@ -31,7 +31,10 @@ The smoke path is intentionally minimal: it proves the template renders and the 
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `README.md` now includes a “Fastest smoke path” section with a deterministic no-input render and an explicit `doctor` success checkpoint.
+  - The smoke path is documented as not requiring `pdm install` (only `cookiecutter` + `python` on PATH).
+  - PowerShell and bash one-liner variants are included for copy/paste.
 
 ## Context and Orientation
 
