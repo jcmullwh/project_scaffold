@@ -66,6 +66,8 @@ re-run install (`scaffold.py run install --project <id>`), or unregister it (`sc
 
     Get-ChildItem -LiteralPath 'tools/templates/internal/python-stdlib-cookiecutter/{% raw %}{{cookiecutter.project_slug}}{% endraw %}'
 
+    Set-Location -LiteralPath 'tools/templates/internal/python-stdlib-cookiecutter/{% raw %}{{cookiecutter.project_slug}}{% endraw %}'
+
 ## Task command templating
 
 Task commands in `registry.toml` are recorded into `monorepo.toml` when you run `scaffold.py add`. Task arguments support:

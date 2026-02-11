@@ -13,10 +13,10 @@ This plan focuses specifically on brace-containing *paths*. General PowerShell q
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-028` (fingerprint `98cfd67aed228b38`).
-- [ ] Enumerate docs that mention brace-containing paths (especially under `templates/` and `tools/templates/`).
-- [ ] Add PowerShell-safe examples that use single-quoted paths and `-LiteralPath` for cmdlets.
-- [ ] Add a short cross-shell note (bash/cmd/PowerShell) that clarifies why braces require quoting in PowerShell.
-- [ ] Validate examples in PowerShell against the current repo contents.
+- [x] (2026-02-11) Enumerate docs that mention brace-containing paths (especially under `templates/` and `tools/templates/`).
+- [x] (2026-02-11) Add PowerShell-safe examples that use single-quoted paths and `-LiteralPath` for cmdlets.
+- [x] (2026-02-11) Add a short cross-shell note (PowerShell + bash one-liners) clarifying quoting expectations.
+- [x] (2026-02-11) Validate examples in PowerShell against the current repo contents and a generated monorepo render.
 
 ## Surprises & Discoveries
 
@@ -31,7 +31,9 @@ This plan focuses specifically on brace-containing *paths*. General PowerShell q
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Root `README.md` now includes a PowerShell `-LiteralPath` example for brace-containing template-preview paths.
+  - Generated scaffolder docs now include PowerShell `Get-ChildItem -LiteralPath` and `Set-Location -LiteralPath` examples for internal templates that include literal placeholder brace directories.
 
 ## Context and Orientation
 

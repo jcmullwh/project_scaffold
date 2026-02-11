@@ -65,6 +65,10 @@ Generated-monorepo docs (as template preview copies in this repo):
 Note: paths under `templates/` contain literal `{{cookiecutter...}}` placeholder braces because this repo stores the
 template source. On PowerShell, quote brace-containing paths when using them as command arguments.
 
+PowerShell example (read a template-preview doc path safely):
+
+    Get-Content -LiteralPath 'templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md' | Select-Object -First 20
+
 ### 2) Contribute to the template repo (develop templates/tests/CI)
 
 This repo uses PDM for the development environment:
