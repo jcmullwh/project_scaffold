@@ -51,6 +51,11 @@ Fix:
 
       cookiecutter templates/monorepo-root -o <output_dir>
 
+- Or, if you already have `pdm` and you're working from this template repo, you can use the repo's dev dependency:
+
+      pdm install
+      pdm run cookiecutter templates/monorepo-root -o <output_dir>
+
 ### "scaffold.py: command not found" or running `scaffold.py` in the template repo
 
 The scaffolder CLI exists in the generated monorepo. If you run `python tools/scaffold/scaffold.py ...` in this template
@@ -132,4 +137,3 @@ The template repo's CI (`.github/workflows/ci.yml`) runs on Ubuntu with multiple
 
 It does not currently run every external toolchain's tasks end-to-end (npm/go/cargo/terraform) and does not currently
 exercise Windows/macOS runners.
-

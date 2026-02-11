@@ -38,6 +38,11 @@ From this repo root (template repo), generate a monorepo into an output director
 
     cookiecutter templates/monorepo-root -o <output_dir>
 
+Fallback (use the template repo's pinned Cookiecutter via PDM; requires `pdm install`):
+
+    pdm install
+    pdm run cookiecutter templates/monorepo-root -o <output_dir>
+
 Cookiecutter will prompt for:
 
 - `repo_slug`: the directory name for the generated repo (for example `my-monorepo`).
