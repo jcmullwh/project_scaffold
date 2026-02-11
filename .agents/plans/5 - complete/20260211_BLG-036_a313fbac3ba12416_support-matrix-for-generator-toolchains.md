@@ -19,10 +19,10 @@ This reduces avoidable trial-and-error and makes support expectations explicit.
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-036` (fingerprint `a313fbac3ba12416`).
-- [ ] Inventory built-in generators and their dependencies from the generated registry template.
-- [ ] Decide where the matrix lives (doc location) and how it is kept current.
-- [ ] Author the support matrix with explicit “tested vs not tested” statements and version guidance where we have evidence.
-- [ ] Link to the matrix from root docs and/or generated monorepo docs.
+- [x] (2026-02-11) Inventory built-in generators and their dependencies from the generated registry template.
+- [x] (2026-02-11) Decide where the matrix lives (doc location) and how it is kept current.
+- [x] (2026-02-11) Author the support matrix with explicit “tested vs not tested” statements and version guidance where we have evidence.
+- [x] (2026-02-11) Link to the matrix from root docs and the generated monorepo scaffolder docs.
 
 ## Surprises & Discoveries
 
@@ -31,8 +31,8 @@ This reduces avoidable trial-and-error and makes support expectations explicit.
 
 ## Decision Log
 
-- Decision: Create a dedicated `docs/SUPPORT_MATRIX.md` in the template repo and link to it from the root `README.md` and the generated `tools/scaffold/README.md`.
-  Rationale: A matrix is easier to scan when it is its own page, and links keep the entrypoint READMEs shorter.
+- Decision: Create the matrix as `tools/scaffold/SUPPORT_MATRIX.md` in the generated monorepo template, and link to it from both the generated scaffolder README and the template repo root README (as a preview path under `templates/`).
+  Rationale: The support matrix is most useful when it ships with the generated monorepo (where adopters will look for it), while the template repo can still point at the preview copy.
   Date/Author: 2026-02-11 / agent
 
 - Decision: Be explicit about what we do and do not test: use “tested in CI” vs “not covered by template repo CI” rather than making unsupported version claims.
@@ -41,7 +41,9 @@ This reduces avoidable trial-and-error and makes support expectations explicit.
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Added `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/SUPPORT_MATRIX.md` with a generator-by-generator toolchain matrix.
+  - Linked the matrix from `tools/scaffold/README.md` and from the template repo root `README.md` (preview path).
 
 ## Context and Orientation
 
@@ -64,7 +66,7 @@ It does not currently execute every generator’s external toolchain (node/go/ru
 
 ## Plan of Work
 
-1. Create `docs/SUPPORT_MATRIX.md` in this template repo. The doc should include:
+1. Create `tools/scaffold/SUPPORT_MATRIX.md` in the generated monorepo template at `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/SUPPORT_MATRIX.md`. The doc should include:
    - A short explanation of what the matrix covers (generator toolchains, not “all possible templates”).
    - A statement of what platforms are intended to work (developer workstation support) and what CI currently tests.
    - A support matrix that includes, for each built-in generator id:
@@ -74,10 +76,10 @@ It does not currently execute every generator’s external toolchain (node/go/ru
    A table is acceptable here because the whole point is scannability; keep it concise.
 
 2. Add links to the matrix:
-   - Root `README.md` should link to `docs/SUPPORT_MATRIX.md` in the evaluator/contributor entry area.
-   - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md` should include a short “Support matrix” link for adopters of the generated monorepo.
+   - Root `README.md` should link to the preview copy in `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/SUPPORT_MATRIX.md`.
+   - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md` should include a short “Support matrix” pointer to `tools/scaffold/SUPPORT_MATRIX.md` (in the generated monorepo).
 
-3. Add a small “update policy” paragraph in `docs/SUPPORT_MATRIX.md`:
+3. Add a small “update policy” paragraph in `tools/scaffold/SUPPORT_MATRIX.md`:
    - When a generator is added/changed, update the matrix.
    - When CI coverage changes (new OS or toolchain tested), update the “tested in CI” column.
 
@@ -89,7 +91,7 @@ From repo root (`i:\\code\\project_scaffold`):
     Get-Content -Path 'templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/registry.toml'
 
     # (After implementation) confirm the new doc exists.
-    Test-Path docs/SUPPORT_MATRIX.md
+    Test-Path 'templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/SUPPORT_MATRIX.md'
 
 ## Validation and Acceptance
 

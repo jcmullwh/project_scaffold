@@ -63,6 +63,7 @@ Generated-monorepo docs (as template preview copies in this repo):
 
 - `templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md`
 - `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/README.md`
+- `templates/monorepo-root/{{cookiecutter.repo_slug}}/tools/scaffold/SUPPORT_MATRIX.md`
 
 Note: paths under `templates/` contain literal `{{cookiecutter...}}` placeholder braces because this repo stores the
 template source. On PowerShell, quote brace-containing paths when using them as command arguments.

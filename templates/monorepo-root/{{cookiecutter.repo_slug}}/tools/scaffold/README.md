@@ -37,6 +37,8 @@ If you need to unregister a project from the manifest:
 - Required only for external Cookiecutter sources and vendoring: `git` on PATH.
 - Required only for running tasks: whatever commands your `tasks.*` reference (e.g. `poetry`, `uv`, `npm`, `cargo`, `terraform`).
 
+See `tools/scaffold/SUPPORT_MATRIX.md` for a generator-by-generator view of toolchain requirements and what is tested.
+
 Note: `scaffold.py add` runs `tasks.install` by default, and will fail early if the install tool is not on PATH. Use
 `--no-install` to create the project without running install.
 
