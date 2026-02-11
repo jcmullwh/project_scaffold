@@ -16,6 +16,8 @@ This repo includes `tools/scaffold/scaffold.py`, a small Python CLI that:
 - records created projects in a manifest (`tools/scaffold/monorepo.toml`)
 - runs explicit per-project tasks from the manifest (no toolchain assumptions)
 
+See `tools/scaffold/README.md` for full CLI usage and for a guide to adding custom generators (extending the registry).
+
 ## Golden path
 
 List what you can scaffold, then create a project and run its tasks:

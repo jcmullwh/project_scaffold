@@ -17,10 +17,10 @@ The guide must include a minimal working example that does not require network a
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-034` (fingerprint `ed034bea0f3cb4f1`).
-- [ ] Review current generator documentation and identify what is missing for “do it yourself” extension.
-- [ ] Add a step-by-step “Add your own generator” guide in the generated monorepo docs.
-- [ ] Include a minimal working example generator definition and validation commands.
-- [ ] Validate the guide by rendering a monorepo and executing the documented steps end-to-end.
+- [x] (2026-02-11) Review current generator documentation and identify what is missing for “do it yourself” extension.
+- [x] (2026-02-11) Add a step-by-step “Add your own generator” guide in the generated monorepo docs.
+- [x] (2026-02-11) Include a minimal working example generator definition and validation commands.
+- [x] (2026-02-11) Validate the guide by rendering a monorepo and executing the documented steps end-to-end.
 
 ## Surprises & Discoveries
 
@@ -39,7 +39,10 @@ The guide must include a minimal working example that does not require network a
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `tools/scaffold/README.md` now includes a linear “Extending the registry” guide with a minimal working generator example.
+  - The generated monorepo `README.md` now points readers to the scaffolder docs for the custom generator guide.
+  - The example was validated end-to-end by adding the generator to `registry.toml`, listing it, and scaffolding a project with `--no-install`.
 
 ## Context and Orientation
 

@@ -117,6 +117,45 @@ This does not attempt to undo any toolchain-level side effects (virtual environm
 - When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define
   `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
 
+## Extending the registry (add your own generator)
+
+You can add your own generators by editing `tools/scaffold/registry.toml`. A generator defines:
+
+- how to create the project directory (`type = "copy" | "cookiecutter" | "command"`), and
+- which task commands to record into the manifest (`tools/scaffold/monorepo.toml`) for later execution.
+
+Minimal working example (offline; Python-only): add a new generator id that reuses the built-in stdlib copy template.
+
+1) Edit `tools/scaffold/registry.toml` and add:
+
+    [generators.python_stdlib_copy_alt]
+    type = "copy"
+    source = "tools/templates/internal/python-stdlib-copy"
+    toolchain = "python"
+    package_manager = "none"
+    substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+    tasks.lint = ["python", "-m", "compileall", "src"]
+    tasks.test = ["python", "-m", "unittest", "discover", "-s", "tests"]
+
+2) Validate that the generator is visible:
+
+    python tools/scaffold/scaffold.py generators
+
+3) Scaffold a project using the new generator (without running installs):
+
+    python tools/scaffold/scaffold.py add lib demo-alt --generator python_stdlib_copy_alt --no-install
+
+4) Confirm the manifest recorded the generator and tasks:
+
+    python tools/scaffold/scaffold.py projects
+    # Inspect tools/scaffold/monorepo.toml in your editor.
+
+Notes:
+
+- If a kind enables `ci.lint/test/build`, your generator must define `tasks.lint/tasks.test/tasks.build` unless you pass
+  `--allow-missing-ci-tasks`.
+- Use `--dry-run` to preview what `add` would do without writing anything.
+
 ## Included generators (default registry)
 
 The default `tools/scaffold/registry.toml` includes:
