@@ -18,10 +18,10 @@ This reduces mental-model confusion and prevents misuse of internal-only surface
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-035` (fingerprint `569c90e92bf14695`).
-- [ ] Inventory entry points and configuration surfaces in both the template repo and the generated monorepo template.
-- [ ] Write a single architecture map doc page with an entry-point index and repo layout map.
-- [ ] Link to the architecture map from the root `README.md`.
-- [ ] Validate all referenced paths and commands exist and are current.
+- [x] (2026-02-11) Inventory entry points and configuration surfaces in both the template repo and the generated monorepo template.
+- [x] (2026-02-11) Write a single architecture map doc page with an entry-point index and repo layout map.
+- [x] (2026-02-11) Link to the architecture map from the root `README.md`.
+- [x] (2026-02-11) Validate all referenced paths and commands exist and are current.
 
 ## Surprises & Discoveries
 
@@ -36,7 +36,9 @@ This reduces mental-model confusion and prevents misuse of internal-only surface
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - Added `docs/ARCHITECTURE.md` with a concise map of entry points and sources of truth for both the template repo and the generated monorepo.
+  - Linked `docs/ARCHITECTURE.md` from the root `README.md` for evaluator discoverability.
 
 ## Context and Orientation
 

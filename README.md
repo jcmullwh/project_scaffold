@@ -5,6 +5,8 @@ stdlib-only scaffolder CLI (`tools/scaffold/scaffold.py`) for adding projects an
 
 ## Choose Your Path
 
+Architecture and entry points: see `docs/ARCHITECTURE.md`.
+
 Fastest smoke path (two contexts):
 
 - Generate a monorepo (template repo) and run `doctor` (generated repo):
