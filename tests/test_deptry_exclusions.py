@@ -31,4 +31,3 @@ def test_pyproject_toml_parses_and_deptry_exclusions_cover_expected_paths() -> N
 
     for sample in samples:
         assert any(re.search(pat, sample) for pat in pattern_strs), sample
-

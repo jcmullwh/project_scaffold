@@ -31,3 +31,10 @@ Install hooks:
 Run hooks on all files:
 
     pdm run pre-commit run --all-files
+
+## Drop-ins (`.agents/dropins/`)
+
+This repo includes transplantable "drop-in" bundles under `.agents/dropins/` that are meant to be copied into other
+repos/templates and are not part of this template repo's runtime.
+
+See `.agents/dropins/README.md` for purpose and maintenance rules (including required tool excludes).

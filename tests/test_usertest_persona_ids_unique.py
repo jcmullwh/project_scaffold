@@ -29,4 +29,3 @@ def test_usertest_persona_ids_are_unique() -> None:
         prev = seen.get(persona_id)
         assert prev is None, f"Duplicate persona id {persona_id!r} in {prev} and {path}"
         seen[persona_id] = path
-

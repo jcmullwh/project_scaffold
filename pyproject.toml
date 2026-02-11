@@ -41,7 +41,7 @@ per_rule_ignores = { DEP004 = ["tomli"] }
 python_version = "3.11"
 warn_unused_configs = true
 strict = true
-exclude = "(^templates[\\\\/].*[\\\\/]tools[\\\\/](templates|monorepo_publish)[\\\\/])"
+exclude = "(^templates[\\\\/].*[\\\\/]tools[\\\\/](templates|monorepo_publish)[\\\\/]|^\\.agents[\\\\/]dropins[\\\\/])"
 
 [[tool.mypy.overrides]]
 module = [
@@ -59,6 +59,7 @@ ignore_missing_imports = true
 target-version = "py311"
 line-length = 120
 exclude = [
+  ".agents/dropins/**",
   "templates/**/tools/templates/**",
 ]
 

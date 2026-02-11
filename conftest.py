@@ -10,19 +10,27 @@ We enforce `testpaths = ["tests"]` so collection stays scoped to the real tests.
 
 from __future__ import annotations
 
-import pytest
-
+from typing import Any, Protocol
 
 _EXPECTED_TESTPATHS = ["tests"]
 
 
-def pytest_configure(config: pytest.Config) -> None:
+class _PytestConfig(Protocol):
+    def getini(self, name: str) -> Any:  # pragma: no cover
+        ...
+
+
+class _PytestUsageError(Exception):
+    """Raised when pytest is configured in an unsafe way for this repository."""
+
+
+def pytest_configure(config: _PytestConfig) -> None:
     """Fail early with an actionable error if pytest collection scope drifts."""
 
     # `getini("testpaths")` returns a list-like value, or an empty list if unset.
     testpaths = list(config.getini("testpaths") or [])
     if testpaths != _EXPECTED_TESTPATHS:
-        raise pytest.UsageError(
+        raise _PytestUsageError(
             "Pytest is misconfigured for this repository.\n"
             "\n"
             "Expected [tool.pytest.ini_options] testpaths = ['tests'] in pyproject.toml.\n"
@@ -31,4 +39,3 @@ def pytest_configure(config: pytest.Config) -> None:
             "\n"
             f"Observed testpaths = {testpaths!r}\n"
         )
-

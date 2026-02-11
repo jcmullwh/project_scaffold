@@ -10,9 +10,8 @@ We enforce `[tool.pytest.ini_options].testpaths = ["tests"]` in `pyproject.toml`
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-
 import tomllib
+from pathlib import Path
 
 
 def main() -> int:
@@ -20,12 +19,7 @@ def main() -> int:
     pyproject_path = repo_root / "pyproject.toml"
 
     data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    testpaths = (
-        data.get("tool", {})
-        .get("pytest", {})
-        .get("ini_options", {})
-        .get("testpaths")
-    )
+    testpaths = data.get("tool", {}).get("pytest", {}).get("ini_options", {}).get("testpaths")
 
     expected = ["tests"]
     if testpaths != expected:
@@ -36,7 +30,7 @@ def main() -> int:
             file=sys.stderr,
         )
         print("  [tool.pytest.ini_options]", file=sys.stderr)
-        print("  testpaths = [\"tests\"]", file=sys.stderr)
+        print('  testpaths = ["tests"]', file=sys.stderr)
         print("", file=sys.stderr)
         print(f"Observed [tool.pytest.ini_options].testpaths = {testpaths!r}", file=sys.stderr)
         return 1
@@ -46,4 +40,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
