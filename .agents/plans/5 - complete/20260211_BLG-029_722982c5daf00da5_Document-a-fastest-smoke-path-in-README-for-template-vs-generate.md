@@ -16,9 +16,9 @@ The smoke path is intentionally brief. Its purpose is to give a new reader a rel
 ## Progress
 
 - [x] (2026-02-11) Create this ExecPlan from ticket `BLG-029` (fingerprint `722982c5daf00da5`).
-- [ ] Add a `Fastest smoke path` section near the top of `README.md`.
-- [ ] Include two clearly separated tracks with explicit working-directory labels.
-- [ ] Validate the described steps locally and ensure they do not rely on implicit context.
+- [x] (2026-02-11) Add a `Fastest smoke path` section near the top of `README.md`.
+- [x] (2026-02-11) Include two clearly separated tracks with explicit working-directory labels.
+- [x] (2026-02-11) Validate the described steps locally (`--no-input` render + `doctor`).
 
 ## Surprises & Discoveries
 
@@ -33,7 +33,9 @@ The smoke path is intentionally brief. Its purpose is to give a new reader a rel
 
 ## Outcomes & Retrospective
 
-- Outcome: (fill in after implementation)
+- Outcome:
+  - `README.md` now includes an explicit “Fastest smoke path” section that separates template-repo vs generated-repo commands.
+  - The generated-repo smoke uses a deterministic `--no-input` render plus `scaffold.py doctor`.
 
 ## Context and Orientation
 

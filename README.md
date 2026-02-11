@@ -5,6 +5,18 @@ stdlib-only scaffolder CLI (`tools/scaffold/scaffold.py`) for adding projects an
 
 ## Choose Your Path
 
+Fastest smoke path (two contexts):
+
+- Generate a monorepo (template repo) and run `doctor` (generated repo):
+
+      cookiecutter templates/monorepo-root --no-input -o .tmp
+      python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
+
+- Validate the template repo dev environment (template repo):
+
+      pdm install
+      pdm run pytest
+
 ### 1) Generate and use a monorepo (recommended for evaluation)
 
 From this repo root (template repo), generate a monorepo into an output directory:
