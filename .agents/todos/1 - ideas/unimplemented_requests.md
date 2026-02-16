@@ -45,4 +45,3 @@ Note: This file was moved out of `.agents/user_info/` on 2026-02-07 to keep `use
 | Category | Request | Deferred because | Notes / dependencies |
 |---|---|---|---|
 | Doc Work | Document per-project lockfile expectations (e.g., PDM often creates one lock per project) | Needs a decision on where this belongs (root docs vs generated-monorepo docs) and how opinionated to be across toolchains. | Downstream note: easy to miss if you expect a single monorepo lock. |
-

@@ -77,7 +77,7 @@ The no-input smoke render writes into a new directory under `.tmp/`. It is safe 
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-020`  
+Source ticket: `BLG-020`
 Fingerprint: `cf3557f0af101e29`
 
 ## Interfaces and Dependencies

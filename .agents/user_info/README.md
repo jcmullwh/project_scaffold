@@ -13,4 +13,3 @@ Templates / drafts live here:
 Backlog of requested changes/features lives at:
 
 - `.agents/todos/1 - ideas/unimplemented_requests.md`
-

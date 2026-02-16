@@ -62,4 +62,3 @@
     "extensions": { "type": "object", "additionalProperties": true }
   }
 }
-

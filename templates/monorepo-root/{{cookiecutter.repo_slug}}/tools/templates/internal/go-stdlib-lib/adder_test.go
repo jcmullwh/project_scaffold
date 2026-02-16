@@ -7,4 +7,3 @@ func TestAdd(t *testing.T) {
 		t.Fatalf("expected 5, got %d", Add(2, 3))
 	}
 }
-

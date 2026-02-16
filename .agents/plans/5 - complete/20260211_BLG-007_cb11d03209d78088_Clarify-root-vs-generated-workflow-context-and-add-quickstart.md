@@ -93,7 +93,7 @@ The test render writes into `.tmp/`. Delete `.tmp/` to clean up and re-run. The 
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-007`  
+Source ticket: `BLG-007`
 Fingerprint: `cb11d03209d78088`
 
 ## Interfaces and Dependencies

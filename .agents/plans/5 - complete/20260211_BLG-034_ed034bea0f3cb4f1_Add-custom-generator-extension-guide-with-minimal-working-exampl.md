@@ -109,7 +109,7 @@ The validation steps write into `.tmp/`. Delete `.tmp/` and re-run. If a user ma
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-034`  
+Source ticket: `BLG-034`
 Fingerprint: `ed034bea0f3cb4f1`
 
 ## Interfaces and Dependencies

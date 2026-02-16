@@ -90,7 +90,7 @@ This is a documentation-only change. Re-running the steps is safe. If wording is
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-018`  
+Source ticket: `BLG-018`
 Fingerprint: `a28a81f37504adb2`
 
 ## Interfaces and Dependencies

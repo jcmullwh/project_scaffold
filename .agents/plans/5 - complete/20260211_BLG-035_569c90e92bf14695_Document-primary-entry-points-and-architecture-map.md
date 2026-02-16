@@ -108,7 +108,7 @@ Documentation-only change. Re-running validation is safe. If the repo layout cha
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-035`  
+Source ticket: `BLG-035`
 Fingerprint: `569c90e92bf14695`
 
 ## Interfaces and Dependencies

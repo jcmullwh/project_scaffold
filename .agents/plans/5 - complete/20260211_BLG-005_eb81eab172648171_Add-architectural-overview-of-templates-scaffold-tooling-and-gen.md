@@ -85,7 +85,7 @@ Documentation-only change. Updating the architecture map is safe and should be d
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-005`  
+Source ticket: `BLG-005`
 Fingerprint: `eb81eab172648171`
 
 ## Interfaces and Dependencies

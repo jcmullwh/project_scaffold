@@ -56,4 +56,3 @@ Legend:
 
 When you change `tools/scaffold/registry.toml` (add/remove generators, change task commands, or change toolchain
 assumptions), update this document in the same change.
-

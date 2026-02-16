@@ -15,7 +15,7 @@ The primary “product” is not only the end result, but:
 If you are implementing work here (human or agent), treat this document as **binding**.
 
 If you believe it conflicts with another document:
-1) **stop**, and  
+1) **stop**, and
 2) **escalate** (do not “pick one” and continue).
 
 ### This is an experimental prototype
@@ -120,7 +120,7 @@ Whenever you move a plan or todo, update any docs/links that reference its locat
 ### 1) No silent fallbacks
 If something is missing, invalid, or fails, the system must:
 - **raise with a clear error** (preferred), OR
-- **warn loudly** and follow a clearly documented, logged best-effort behavior  
+- **warn loudly** and follow a clearly documented, logged best-effort behavior
   - Any fallback behavior must be **human-approved**.
 
 Avoid patterns that:
@@ -149,8 +149,8 @@ Avoid anti-pattern fixes:
 
 These accumulate, interact unpredictably, and regress elsewhere.
 
-**Example (what not to do):**  
-User preference: “I don’t like disembodied arms.”  
+**Example (what not to do):**
+User preference: “I don’t like disembodied arms.”
 Bad outcome: pipeline starts injecting “well-rendered arms” into every prompt, creating irrelevant arms that are technically correct but narratively pointless.
 
 **Incorrect fixes (not acceptable):**

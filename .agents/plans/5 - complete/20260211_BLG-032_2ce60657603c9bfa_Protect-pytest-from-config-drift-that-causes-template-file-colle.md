@@ -89,7 +89,7 @@ The guard is purely defensive. If it blocks a legitimate workflow, the remedy is
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-032`  
+Source ticket: `BLG-032`
 Fingerprint: `2ce60657603c9bfa`
 
 ## Interfaces and Dependencies

@@ -84,7 +84,7 @@ The generated smoke writes into `.tmp/` and is safe to delete. PDM install can b
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-029`  
+Source ticket: `BLG-029`
 Fingerprint: `722982c5daf00da5`
 
 ## Interfaces and Dependencies

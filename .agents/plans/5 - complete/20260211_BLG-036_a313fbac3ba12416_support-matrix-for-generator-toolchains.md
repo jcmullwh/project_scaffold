@@ -109,7 +109,7 @@ Documentation-only change. If the matrix becomes stale, the fix is to update it 
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-036`  
+Source ticket: `BLG-036`
 Fingerprint: `a313fbac3ba12416`
 
 ## Interfaces and Dependencies

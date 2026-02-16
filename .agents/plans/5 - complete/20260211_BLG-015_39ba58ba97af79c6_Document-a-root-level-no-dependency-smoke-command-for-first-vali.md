@@ -93,7 +93,7 @@ The smoke render writes under `.tmp/`. It is safe to delete `.tmp/` and repeat t
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-015`  
+Source ticket: `BLG-015`
 Fingerprint: `39ba58ba97af79c6`
 
 ## Interfaces and Dependencies

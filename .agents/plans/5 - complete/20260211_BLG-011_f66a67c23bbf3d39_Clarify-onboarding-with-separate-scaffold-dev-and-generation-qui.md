@@ -101,7 +101,7 @@ The generation smoke test writes under `.tmp/`. It is safe to delete `.tmp/` and
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-011`  
+Source ticket: `BLG-011`
 Fingerprint: `f66a67c23bbf3d39`
 
 ## Interfaces and Dependencies

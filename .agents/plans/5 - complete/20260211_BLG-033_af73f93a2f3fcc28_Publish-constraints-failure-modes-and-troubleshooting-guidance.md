@@ -108,7 +108,7 @@ Documentation-only change. Revisions are safe and should be made whenever behavi
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-033`  
+Source ticket: `BLG-033`
 Fingerprint: `af73f93a2f3fcc28`
 
 ## Interfaces and Dependencies

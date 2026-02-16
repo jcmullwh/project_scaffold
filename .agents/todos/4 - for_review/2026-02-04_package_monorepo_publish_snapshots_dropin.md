@@ -58,4 +58,3 @@ None outside the kit.
 ### Acceptance criteria
 - The kit exists under `.agents/dropins/monorepo_publish_snapshots/` and is self-contained.
 - No ephemeral artifacts are added to git status (no virtualenvs, caches, temp repos).
-

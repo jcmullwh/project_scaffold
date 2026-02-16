@@ -33,4 +33,3 @@ Not applicable (docs-only change). Verify by checking paths exist and `rg` finds
 - `.agents/user_info/users*.md` and `.agents/user_info/unimplemented_requests.md` no longer exist.
 - `.agents/user_info/USERS.template.md` exists and includes a brief note that it is a template for repo-root `USERS.md`.
 - `.agents/todos/1 - ideas/unimplemented_requests.md` exists.
-

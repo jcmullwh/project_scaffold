@@ -95,7 +95,7 @@ All validation steps write into `.tmp/`. Delete `.tmp/` and re-run. If generatio
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-004`  
+Source ticket: `BLG-004`
 Fingerprint: `c2a52b35f6005432`
 
 ## Interfaces and Dependencies

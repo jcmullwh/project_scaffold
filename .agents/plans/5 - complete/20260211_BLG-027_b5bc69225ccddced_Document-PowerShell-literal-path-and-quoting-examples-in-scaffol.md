@@ -88,7 +88,7 @@ Documentation-only change. If examples are incorrect or confusing, revise them a
 
 ## Artifacts and Notes
 
-Source ticket: `BLG-027`  
+Source ticket: `BLG-027`
 Fingerprint: `b5bc69225ccddced`
 
 ## Interfaces and Dependencies

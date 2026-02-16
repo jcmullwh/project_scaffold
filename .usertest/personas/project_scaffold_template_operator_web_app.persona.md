@@ -1,6 +1,6 @@
 ---
 id: project_scaffold_template_operator_web_app
-name: project_scaffold Template Operator Web App 
+name: project_scaffold Template Operator Web App
 extends: developer_integrator
 tags: [project_scaffold]
 ---
@@ -29,7 +29,7 @@ You work in various web apps and services. You use one or more project_scaffold 
 - Generic assumptions that don't fit web app contexts.
 - Lack of support for common web development tools and libraries.
 - Patterns and practices that deviate from established web development conventions.
-- 
+-
 
 ## Goals
 

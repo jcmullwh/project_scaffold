@@ -30,4 +30,3 @@ When you add or change Python code under `.agents/dropins/`, ensure the template
 
 If you add a new drop-in directory, also add (or update) a short README in that directory explaining what it is and how
 to validate it in the target repo.
-
