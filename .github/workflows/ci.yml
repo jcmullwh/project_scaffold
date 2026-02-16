@@ -1,3 +1,5 @@
+# Scope: Template repository CI.
+# This workflow runs in the template-source repo and validates template code, docs contracts, and tests.
 name: CI
 
 on:
@@ -41,8 +43,30 @@ jobs:
       - name: Deptry
         run: pdm run deptry .
 
+      - name: Persona id guard
+        run: pdm run python tools/check_persona_ids.py
+
       - name: Pytest config guard
         run: pdm run python tools/check_pytest_config.py
 
       - name: Pytest
         run: pdm run pytest
+
+  windows-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Cookiecutter only
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cookiecutter
+
+      - name: Render and run doctor
+        run: |
+          cookiecutter templates/monorepo-root --no-input -o .tmp
+          python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor

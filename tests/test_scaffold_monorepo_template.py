@@ -123,6 +123,22 @@ def test_template_renders_and_internal_templates_are_not_rendered(tmp_path: Path
     assert internal_cc.exists()
 
 
+def test_generated_docs_include_glossary_troubleshooting_and_customization(tmp_path: Path) -> None:
+    repo_root = _render_monorepo(tmp_path, repo_slug="demo-docs")
+
+    scaffold_readme = (repo_root / "tools" / "scaffold" / "README.md").read_text(encoding="utf-8")
+    assert "## Glossary" in scaffold_readme
+    assert "## Troubleshooting" in scaffold_readme
+    assert "## Extension workflow (registry to manifest)" in scaffold_readme
+    assert "--dry-run" in scaffold_readme
+    assert "--no-install" in scaffold_readme
+    assert "-LiteralPath" in scaffold_readme
+
+    generated_readme = (repo_root / "README.md").read_text(encoding="utf-8")
+    assert "## Customizing generators" in generated_readme
+    assert "This CI is for the generated monorepo." in generated_readme
+
+
 def test_scaffold_add_copy_and_run_task(tmp_path: Path) -> None:
     repo_root = _render_monorepo(tmp_path, repo_slug="demo-2")
 

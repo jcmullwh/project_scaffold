@@ -4,6 +4,14 @@
 
 All commands in this document assume you run them from the monorepo root (the directory that contains `tools/`).
 
+## Glossary
+
+- kind: A project category (`app`, `lib`, `web`, etc.) defined in `tools/scaffold/registry.toml` under `[kinds.*]`.
+- generator: A project creation method defined in `tools/scaffold/registry.toml` under `[generators.*]`.
+- registry: `tools/scaffold/registry.toml`, the config source of truth for kinds, generators, and default tasks.
+- manifest: `tools/scaffold/monorepo.toml`, the recorded source of truth for created projects and `tasks.*`.
+- doctor: `python tools/scaffold/scaffold.py doctor`, a validation command that checks config/manifest/tooling readiness.
+
 ## Golden path
 
 List available kinds and generators, then scaffold a project and run its tasks:
@@ -44,6 +52,43 @@ Note: `scaffold.py add` runs `tasks.install` by default, and will fail early if 
 
 If install fails after generation, the project is still recorded in `tools/scaffold/monorepo.toml`. Fix the issue and
 re-run install (`scaffold.py run install --project <id>`), or unregister it (`scaffold.py remove <id>`).
+
+## Troubleshooting
+
+Use `--dry-run` to preview an `add` run without writing files, and use `--no-install` to generate files without running
+`tasks.install`.
+
+Missing tool on PATH:
+
+- Symptom: `Required command not found on PATH: <tool>`.
+- Likely cause: selected generator/task requires a tool not installed in your environment.
+- Recovery:
+
+      python tools/scaffold/scaffold.py add <kind> <project_id> --dry-run
+      python tools/scaffold/scaffold.py add <kind> <project_id> --no-install
+
+Install step failed after generation:
+
+- Symptom: project directory exists but install failed.
+- Likely cause: environment/toolchain issue after files were created.
+- Recovery:
+
+      python tools/scaffold/scaffold.py run install --project <project_id>
+
+Partial manifest state after a failed run:
+
+- Symptom: project exists in `tools/scaffold/monorepo.toml` but you want to roll it back.
+- Recovery:
+
+      python tools/scaffold/scaffold.py remove <project_id>
+
+External template trust gate:
+
+- Symptom: add fails and asks for `--trust`.
+- Likely cause: generator is external and configured as untrusted.
+- Recovery:
+
+      python tools/scaffold/scaffold.py add <kind> <project_id> --generator <generator_id> --trust
 
 ## Cookiecutter sources
 
@@ -116,6 +161,25 @@ This does not attempt to undo any toolchain-level side effects (virtual environm
   and CI.
 - When `kinds.<kind>.ci` enables `lint/test/build`, `scaffold add` requires the selected generator to define
   `tasks.lint/tasks.test/tasks.build` (override with `--allow-missing-ci-tasks`).
+
+## Extension workflow (registry to manifest)
+
+Use this lifecycle when adding or customizing a generator:
+
+1. Edit `tools/scaffold/registry.toml` and add/update a generator entry.
+2. Validate generator visibility:
+
+      python tools/scaffold/scaffold.py generators
+
+3. Add a project with that generator:
+
+      python tools/scaffold/scaffold.py add <kind> <project_id> --generator <generator_id> --no-install
+
+4. Confirm what was recorded:
+
+      python tools/scaffold/scaffold.py projects
+
+5. Inspect `tools/scaffold/monorepo.toml` to verify generator id, path, and `tasks.*`.
 
 ## Extending the registry (add your own generator)
 

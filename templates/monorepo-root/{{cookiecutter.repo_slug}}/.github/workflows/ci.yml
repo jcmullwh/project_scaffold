@@ -1,3 +1,5 @@
+# Scope: Generated monorepo CI.
+# This workflow is copied into generated repos and validates projects recorded in tools/scaffold/monorepo.toml.
 name: CI
 
 on:

@@ -8,6 +8,25 @@ This repo uses PDM for development.
 
     pdm install
 
+## If `pdm install` hangs on Windows
+
+Treat "hang" as no new output for 5 or more minutes.
+
+Try:
+
+    pdm info
+    pdm install
+
+If you need an immediate first-success fallback (without PDM), run:
+
+    python -m pip install --upgrade pip
+    python -m pip install cookiecutter pytest
+    cookiecutter templates/monorepo-root --no-input -o .tmp
+    python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
+    python -m pytest -q tests/test_scaffold_monorepo_template.py
+
+This fallback is for unblocking only; return to the PDM workflow for normal contribution and full checks.
+
 ## Quality checks
 
 Run all checks locally:

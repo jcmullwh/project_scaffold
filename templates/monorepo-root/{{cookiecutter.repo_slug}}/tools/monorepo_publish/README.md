@@ -44,9 +44,11 @@ Dry run against this monorepo (prints the publish order + versions; validates re
 
     python tools/monorepo_publish/publish_snapshots.py --dry-run
 
-Publish (uploads to GitLab; requires env vars below):
+Publish (uploads to GitLab; requires env vars below and explicit confirmation):
 
-    python tools/monorepo_publish/publish_snapshots.py
+    python tools/monorepo_publish/publish_snapshots.py --confirm-publish
+
+Safety default: running the command without `--confirm-publish` refuses to upload.
 
 ## Required env vars for publishing
 
@@ -65,8 +67,8 @@ The upload URL is:
 
 This template includes `.github/workflows/publish-snapshots.yml`, which runs on:
 
-- push to `main`
-- manual `workflow_dispatch`
+- push to `main` for safety checks (`--self-test` and `--dry-run`)
+- manual `workflow_dispatch` for real publishing
 
 It expects GitHub secrets:
 
@@ -74,6 +76,9 @@ It expects GitHub secrets:
 - `GITLAB_PYPI_PROJECT_ID`
 - `GITLAB_PYPI_USERNAME`
 - `GITLAB_PYPI_PASSWORD`
+
+Real publishing requires manually dispatching the workflow and setting the `confirm_publish` input to `publish`.
+The publish step passes `--confirm-publish` to prevent uploads by omission.
 
 ## GitLab walkthrough (deploy token recommended)
 
@@ -115,7 +120,8 @@ If you prefer to publish from GitLab CI (instead of GitHub Actions), this job us
         - python -m pip install --upgrade pip
         - python -m pip install -r tools/requirements-publish.txt
         - python tools/monorepo_publish/publish_snapshots.py --self-test
-        - python tools/monorepo_publish/publish_snapshots.py
+        - python tools/monorepo_publish/publish_snapshots.py --dry-run
+        - python tools/monorepo_publish/publish_snapshots.py --confirm-publish
 
 ## Installing from GitLab PyPI
 

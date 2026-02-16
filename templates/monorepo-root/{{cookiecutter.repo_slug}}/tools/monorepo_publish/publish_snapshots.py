@@ -257,6 +257,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--dry-run", action="store_true", help="Compute versions and validate rewrites; no publish.")
     parser.add_argument("--self-test", action="store_true", help="Run local self-test and exit.")
+    parser.add_argument(
+        "--confirm-publish",
+        action="store_true",
+        help="Required for real publishing. Prevents accidental upload when credentials are present.",
+    )
     return parser
 
 
@@ -321,6 +326,11 @@ def main(argv: list[str] | None = None) -> int:
             for key in order:
                 print(f"  - {all_packages[key].name}=={eligible_versions[key]}")
             return 0
+
+        if not args.confirm_publish:
+            raise PublishSnapshotsError(
+                "Refusing to publish without --confirm-publish. Use --dry-run for safe validation."
+            )
 
         base_url = os.environ.get("GITLAB_BASE_URL") or "https://gitlab.com"
         project_id = os.environ.get("GITLAB_PYPI_PROJECT_ID")

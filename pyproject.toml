@@ -30,6 +30,7 @@ show_missing = true
 skip_covered = false
 
 [tool.deptry]
+# `.agents/dropins` contains transplantable bundles for other repos, not runtime code for this repo.
 extend_exclude = [
   '.*tools[\\/]templates[\\/]',
   'templates[\\/].*[\\/]tools[\\/]monorepo_publish[\\/]',

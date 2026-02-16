@@ -78,6 +78,30 @@ See `tools/scaffold/README.md` for details.
 The monorepo stays toolchain-agnostic by recording explicit task commands (for example `tasks.test = ["pytest", "-q"]` or
 `tasks.build = ["npm", "run", "build"]`) instead of hardcoding Poetry/PDM/npm in CI scripts.
 
+## Customizing generators
+
+Generator definitions live in `tools/scaffold/registry.toml`. When you run `scaffold.py add`, the selected generator and
+its `tasks.*` commands are recorded into `tools/scaffold/monorepo.toml`.
+
+Minimal example (add a custom generator entry in `tools/scaffold/registry.toml`):
+
+    [generators.python_stdlib_copy_alt]
+    type = "copy"
+    source = "tools/templates/internal/python-stdlib-copy"
+    toolchain = "python"
+    package_manager = "none"
+    substitutions = { "__NAME__" = "{name}", "__NAME_SNAKE__" = "{name_snake}" }
+    tasks.lint = ["python", "-m", "compileall", "src"]
+    tasks.test = ["python", "-m", "unittest", "discover", "-s", "tests"]
+
+Validate the edit and manifest recording:
+
+    python tools/scaffold/scaffold.py generators
+    python tools/scaffold/scaffold.py add lib demo-alt --generator python_stdlib_copy_alt --no-install
+    python tools/scaffold/scaffold.py projects
+
+After `add`, inspect `tools/scaffold/monorepo.toml` to confirm the new project entry and recorded tasks.
+
 ## Internal templates
 
 This repo includes internal templates under `tools/templates/internal/`.
@@ -103,6 +127,8 @@ The centralized GitHub Actions workflow at `.github/workflows/ci.yml`:
 - builds a project matrix from `tools/scaffold/monorepo.toml` via `tools/scaffold/ci_matrix.py`
 - runs `scaffold.py doctor`, then `scaffold.py run install --skip-missing`, then runs lint/test/build per project based on
   the manifest's `ci` flags and `tasks.*` commands
+
+This CI is for the generated monorepo. It is separate from the template-source CI in the template repository.
 
 ## Publishing snapshots (GitLab PyPI)
 

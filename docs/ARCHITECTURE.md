@@ -25,6 +25,17 @@ This document describes the entry points and "source of truth" files for both.
       tools/scaffold/ci_matrix.py -> CI matrix
       scaffold.py run <task> -> executes recorded tasks per project
 
+## Two CI layers
+
+This project intentionally has two CI workflow layers:
+
+1. Template repo CI (this repository): `.github/workflows/ci.yml`
+2. Generated monorepo CI template: `templates/monorepo-root/{{cookiecutter.repo_slug}}/.github/workflows/ci.yml`
+
+Use template repo CI when changing checks for template source, docs, and template tests.
+Use generated monorepo CI when changing how generated repos validate projects recorded in
+`tools/scaffold/monorepo.toml`.
+
 ## Template Repo (This Repo)
 
 Primary purpose: generate a monorepo template and validate it via offline tests.

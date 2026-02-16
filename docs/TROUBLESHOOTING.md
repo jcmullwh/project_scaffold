@@ -41,6 +41,30 @@ For a generator-by-generator view of tool requirements, see the generated monore
 
 ## Common failures and recovery
 
+### `pdm install` hangs on Windows
+
+Hang signature: no new output for 5 or more minutes.
+
+Fix:
+
+1. Try a light probe first, then retry install:
+
+      pdm info
+      pdm install
+
+2. If you are blocked and need first success quickly, use global Python to run the smoke path:
+
+      python -m pip install --upgrade pip
+      python -m pip install cookiecutter
+      cookiecutter templates/monorepo-root --no-input -o .tmp
+      python .tmp/my-monorepo/tools/scaffold/scaffold.py doctor
+
+3. If test dependencies are already available outside PDM, run a minimal fallback test:
+
+      python -m pytest -q tests/test_scaffold_monorepo_template.py
+
+Then return to `pdm install` for normal contributor workflow once the environment is stable.
+
 ### "cookiecutter: command not found"
 
 You are trying to generate a monorepo, but Cookiecutter is not installed.
@@ -118,6 +142,8 @@ Examples:
     Get-Content -LiteralPath 'templates/monorepo-root/{{cookiecutter.repo_slug}}/README.md' | Select-Object -First 20
     Get-ChildItem -LiteralPath 'tools/templates/internal/python-stdlib-cookiecutter/{{cookiecutter.project_slug}}'
 
+See also the root README section "PowerShell Note for `{{cookiecutter...}}` Paths".
+
 ### Network-restricted environments
 
 Some generators are inherently networked. For example, the built-in `node_vite` generator runs `npm create vite@latest`
@@ -134,6 +160,7 @@ The template repo's CI (`.github/workflows/ci.yml`) runs on Ubuntu with multiple
 
 - formatting/linting/typechecking/dependency checks for the template repo, and
 - offline template rendering and scaffolder behavior via `pdm run pytest`.
+- a Windows smoke path that renders the template and runs `doctor` without PDM.
 
 It does not currently run every external toolchain's tasks end-to-end (npm/go/cargo/terraform) and does not currently
-exercise Windows/macOS runners.
+exercise macOS runners.
